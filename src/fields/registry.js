@@ -10,7 +10,7 @@ import number from './number.jsx';
 import reference from './reference.jsx';
 import referenceMulti from './referenceMulti.jsx';
 import image from './ImageField.jsx';
-import placeholder from './placeholder.jsx';
+import richtext from './richtext.jsx';
 
 export { deriveSlug } from './slugify.js';
 
@@ -26,7 +26,7 @@ export const fieldTypes = {
   reference,
   'reference-multi': referenceMulti,
   image,
-  richtext: placeholder,
+  richtext,
 };
 
 // Meldungen je Feldname; leer = gueltig.

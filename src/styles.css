@@ -141,7 +141,6 @@ h1 { font-family: var(--f-display); font-weight: 800; margin: 0 0 1rem; }
 .field [aria-invalid="true"] { border-color: var(--danger, #b00020); }
 .field-error { margin: 0.25rem 0 0; color: var(--danger, #b00020); }
 .field-count { margin: 0.25rem 0 0; color: var(--ink-2); }
-.field-todo { margin: 0; color: var(--ink-2); }
 .field-check { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .field-check label { margin: 0; }
 .check-option { display: flex; align-items: center; gap: 0.5rem; }
@@ -160,3 +159,14 @@ h1 { font-family: var(--f-display); font-weight: 800; margin: 0 0 1rem; }
 .conflict-column li.changed { background: #fff4cc; border-left: 3px solid #8a6d00; }
 .conflict-label, .changed-mark { font-weight: 700; }
 @media (max-width: 40rem) { .conflict-columns { grid-template-columns: 1fr; } }
+
+/* Textseiten-Editor */
+.rt-toolbar { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
+.rt-toolbar button[aria-pressed="true"] { background: var(--ink, #111); color: #fff; }
+.rt-content { min-height: 10rem; padding: 0.6rem 0.75rem; border: 1px solid var(--line-ui); border-radius: var(--radius-sm); background: var(--surface); }
+.rt-content:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.rt-content table, .page-preview table { border-collapse: collapse; }
+.rt-content th, .rt-content td, .page-preview th, .page-preview td { border: 1px solid var(--line-ui); padding: 0.25rem 0.5rem; }
+.link-form { display: grid; gap: 0.5rem; margin-bottom: 0.5rem; padding: 0.75rem; border: 1px solid var(--line-ui); border-radius: var(--radius-sm); }
+.link-form-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.page-preview { padding: 0.6rem 0.75rem; border: 1px solid var(--line-ui); border-radius: var(--radius-sm); }

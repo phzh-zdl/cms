@@ -5,6 +5,7 @@ import SaveBar from '../editor/SaveBar.jsx';
 import { planDelete, applyDelete } from '../content/deleteRules.js';
 import { collectionErrors } from '../editor/entryState.js';
 import ConflictDialog from '../editor/ConflictDialog.jsx';
+import PageEditor from '../editor/PageEditor.jsx';
 import { AuthError, GitHubError } from '../github/client.js';
 import { useSiteWorkingCopy } from '../save/useSiteWorkingCopy.js';
 import { useDraftAutosave } from '../save/useDraftAutosave.js';
@@ -178,7 +179,15 @@ export default function SiteEditor({ site, client, onBack }) {
             }}
             onChange={(rows) => setData((d) => ({ ...d, [item.id]: rows }))} />
         )}
-        {current?.kind === 'page' && item && <h1>{item.label}</h1>}
+        {current?.kind === 'page' && item && (
+          <>
+            <h1>{item.label}</h1>
+            <PageEditor key={item.id} toolbar={item.toolbar}
+              pageIds={config.pages.filter((p) => p.id !== item.id).map((p) => p.id)}
+              page={pages[item.id] ?? { id: item.id, title: item.label, html: '' }}
+              onChange={(next) => wc.setPages((all) => ({ ...all, [item.id]: next }))} />
+          </>
+        )}
       </section>
     </div>
   );
