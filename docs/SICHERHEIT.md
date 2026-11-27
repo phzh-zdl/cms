@@ -88,7 +88,7 @@ Damit funktionieren ihre Zugangsschlüssel für die Organisation sofort nicht me
 | Inhalte (Texte, Ressourcen, Bilder) | Private Repos bei GitHub (USA, siehe Abschnitt 7) | Dauerhaft, mit Änderungsverlauf | Team-Mitglieder, Owner |
 | Sicherungskopie | Privates Backup-Repo bei GitHub | Spiegel, fortlaufend aktualisiert | Nur Admins |
 | Zugangsschlüssel | Im Browser der Person: standardmässig `sessionStorage` (verschwindet beim Schliessen des Fensters), nur wenn die Person „Auf diesem Gerät merken" ankreuzt in `localStorage` (bleibt bis zum Abmelden) | Siehe links | Nur der Browser auf diesem Gerät |
-| Entwürfe (ungespeicherte Änderungen) | `localStorage` im Browser auf dem Gerät der Person, damit ein geschlossenes Fenster nichts kostet | Bis zum Speichern oder Verwerfen | Nur dieses Gerät |
+| Entwürfe (ungespeicherte Änderungen) | `localStorage` im Browser auf dem Gerät der Person, damit ein geschlossenes Fenster nichts kostet | Bis zum Speichern, Verwerfen oder Abmelden (Abmelden löscht alle Entwürfe dieses Browsers, nach einer Rückfrage) | Nur dieser Browser auf diesem Gerät (nicht an die Person gebunden) |
 | Programmcode des CMS | GitHub Pages (öffentlich) | Dauerhaft | Alle, enthält nichts Vertrauliches |
 | Vorschau (Dateien der fertigen Seite mit dem aktuellen Stand, auch Ungespeichertes) | Cache Storage des Browsers (`zdl-vorschau`) auf dem Gerät, ausgeliefert von einem Service Worker (kleines Hintergrundprogramm des Browsers) unter `<CMS-Adresse>/vorschau/`. Wird bei jeder neuen Vorschau ersetzt und beim Abmelden gelöscht | Bis zur nächsten Vorschau bzw. bis zum Abmelden | Nur dieses Gerät |
 | Exportierte ZIP-Datei | Download-Ordner der Person, danach beim Webcenter | Bis zum Löschen | Person, Webcenter |
@@ -120,7 +120,10 @@ zweiten Nachweis. Er wird deshalb eng begrenzt:
 - **Widerrufen:** jederzeit durch die Person selbst (github.com → Settings → Developer
   settings → Fine-grained tokens → Delete) oder durch den Owner der Organisation (unter
   Organisation → Settings → Personal access tokens). Wirkt sofort.
-- **Abmelden im CMS** löscht den Schlüssel aus dem Browser.
+- **Abmelden im CMS** löscht den Schlüssel, alle Entwürfe (`cms.draft.*`) und die Vorschau aus
+  dem Browser. Gibt es ungespeicherte Änderungen, fragt das CMS vorher: „Ungespeicherte
+  Änderungen gehen beim Abmelden verloren. Trotzdem abmelden?" (Abmelden / Abbrechen). Abmelden
+  ist auch möglich, wenn die Anmeldung nicht geprüft werden konnte („Erneut versuchen").
 - Der Schlüssel wird nie in den Inhalten, im Code oder in Protokollen abgelegt.
 
 Wie die Person ihn erstellt, steht in der Anleitung für das Team (`docs/ANLEITUNG.md`).
@@ -176,7 +179,8 @@ verwaltet, mit Ablaufdatum und Kalendererinnerung zur Erneuerung.
    die Repos).
 2. Der Owner prüft unter Organisation → Settings → Personal access tokens, ob Schlüssel
    dieser Person aktiv sind, und widerruft sie.
-3. Die Person löscht Schlüssel und Entwürfe auf ihren Geräten (CMS → Abmelden).
+3. Die Person löscht Schlüssel und Entwürfe auf ihren Geräten (CMS → Abmelden, die Rückfrage
+   zu ungespeicherten Änderungen mit „Abmelden" bestätigen).
 
 **Etwas wurde versehentlich gelöscht oder falsch geändert**
 1. Zuerst im **Verlauf** (im CMS unter „Verlauf" oder bei GitHub unter „Commits")

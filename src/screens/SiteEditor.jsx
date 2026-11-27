@@ -35,7 +35,8 @@ function errorText(e, drafted) {
 }
 
 // Seitenleiste + Hauptbereich. Arbeitsstand und Basis liegen in useSiteWorkingCopy.
-export default function SiteEditor({ site, client, onBack }) {
+// onUnsavedChange(bool): meldet, ob es ungespeicherte Aenderungen gibt (fuer die Rueckfrage beim Abmelden).
+export default function SiteEditor({ site, client, onBack, onUnsavedChange }) {
   const { config } = site;
   const wc = useSiteWorkingCopy(site);
   const { base, data, setData, pages, settings, removedFiles, newImages, dirty } = wc;
@@ -72,6 +73,10 @@ export default function SiteEditor({ site, client, onBack }) {
   };
 
   const unsaved = dirty || saving;
+  const reportUnsaved = useRef(onUnsavedChange);
+  reportUnsaved.current = onUnsavedChange;
+  useEffect(() => { reportUnsaved.current?.(unsaved); }, [unsaved]);
+  useEffect(() => () => reportUnsaved.current?.(false), []);
   useEffect(() => {
     if (!unsaved) return undefined;
     const warn = (e) => { e.preventDefault(); e.returnValue = ''; };

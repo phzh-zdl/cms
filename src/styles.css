@@ -326,6 +326,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .login-panel > [role="status"] { margin: 0; }
 .login-panel > .error { margin-top: 0; }
 .login-panel > .btn-primary { margin-top: var(--s-2); }
+.login-panel > .btn-primary + .btn-block { margin-top: var(--s-2); }
 /* „Auf diesem Gerät merken": Box, Label (ganze Zeile klickbar), Hinweis darunter. */
 .remember {
   display: grid;

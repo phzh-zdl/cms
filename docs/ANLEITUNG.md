@@ -152,7 +152,12 @@ den Schlüssel anklicken → **Delete** bzw. **Revoke**. Er funktioniert sofort 
 sehen (zum Beispiel Fachbereiche, Ressourcen, Textseiten).
 
 Meldet das CMS „Dieser Zugangsschlüssel ist ungültig oder abgelaufen", erstelle einen neuen
-(Abschnitt 4). Mit **Abmelden** oben vergisst der Browser den Schlüssel sofort.
+(Abschnitt 4). Mit **Abmelden** oben vergisst der Browser den Schlüssel sofort. Dabei werden
+auch alle Entwürfe (Abschnitt 10) und die Vorschau auf diesem Gerät gelöscht. Gibt es
+ungespeicherte Änderungen, fragt das CMS vorher „Ungespeicherte Änderungen gehen beim Abmelden
+verloren. Trotzdem abmelden?": **Abmelden** löscht sie, **Abbrechen** lässt dich weiterarbeiten.
+Kann das CMS die Anmeldung nicht prüfen (zum Beispiel ohne Internet), kannst du dich dort mit
+**Abmelden** ebenfalls abmelden.
 
 ![Screenshot: Anmeldung](bilder/anmeldung.png)
 
@@ -265,8 +270,9 @@ den Tab oder stürzt der Browser ab, geht nichts verloren.
 2. Es erscheint „Es gibt ungespeicherte Änderungen vom …. Wiederherstellen?".
 3. **Wiederherstellen** holt deinen Stand zurück, **Verwerfen** löscht ihn.
 
-Der Entwurf liegt nur auf diesem Gerät. Auf einem anderen Rechner oder nach dem Löschen
-der Browserdaten ist er nicht da. Speichere deshalb wichtige Änderungen bald.
+Der Entwurf liegt nur auf diesem Gerät. Auf einem anderen Rechner, nach dem Löschen
+der Browserdaten oder nach dem **Abmelden** ist er nicht da. Speichere deshalb wichtige
+Änderungen bald.
 
 <a id="konflikt"></a>
 

@@ -1,10 +1,17 @@
 // Entwuerfe im localStorage: cms.draft.<repo>.
 // state = { savedAt, baseSha, ancestor, data, pages, settings, removedFiles, newImages: [{ path, base64 }] }
 // ancestor: siehe useSiteWorkingCopy (Vergleichsbasis fuer waehrend des Speicherns bearbeitete Dateien).
-const keyFor = (repo) => `cms.draft.${repo}`;
+const PREFIX = 'cms.draft.';
+const keyFor = (repo) => `${PREFIX}${repo}`;
 
-// true = gesichert; false = ging nicht (z. B. Speicher voll) - Arbeiten geht trotzdem weiter.
+// Beim Abmelden gesperrt: der Editor, der dabei geschlossen wird, schreibt keinen Entwurf mehr.
+// Die naechste Anmeldung gibt das Sichern wieder frei.
+let locked = false;
+export const setDraftsLocked = (value) => { locked = value; };
+
+// true = gesichert (bzw. absichtlich nicht, weil gesperrt); false = ging nicht (z. B. Speicher voll).
 export function saveDraft(repo, state) {
+  if (locked) return true;
   try {
     localStorage.setItem(keyFor(repo), JSON.stringify(state));
     return true;
@@ -38,6 +45,24 @@ export function clearDraft(repo) {
   try {
     localStorage.removeItem(keyFor(repo));
   } catch { /* nichts zu tun */ }
+}
+
+const draftKeys = () => {
+  try {
+    return Object.keys(localStorage).filter((k) => k.startsWith(PREFIX));
+  } catch {
+    return [];
+  }
+};
+
+// Gibt es auf diesem Geraet ungespeicherte Aenderungen (Entwuerfe irgendeiner Seite)?
+export const hasAnyDraft = () => draftKeys().length > 0;
+
+// Alle Entwuerfe aller Seiten loeschen (Abmelden).
+export function clearAllDrafts() {
+  for (const k of draftKeys()) {
+    try { localStorage.removeItem(k); } catch { /* nichts zu tun */ }
+  }
 }
 
 function bytesToBase64(bytes) {
