@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { listSites, loadSite, contentPath } from './site.js';
+import { listSites, loadSite, loadContentAt, contentPath } from './site.js';
+import { parseCmsConfig } from '../config/cmsConfig.js';
 
 const cms = {
   name: 'OER-Katalog',
@@ -95,5 +96,20 @@ describe('loadSite', () => {
 
   it('throws when cms.json is missing', async () => {
     await expect(loadSite(fakeClient({}), 'o/r')).rejects.toThrow('Datei fehlt: cms.json');
+  });
+});
+
+describe('loadContentAt', () => {
+  it('liest die Inhalte einer bestimmten Version, ohne cms.json', async () => {
+    const client = fakeClient({
+      'o/r:public/content/resources.json': resourcesText,
+      'o/r:public/content/pages/impressum.json': pageText,
+    });
+    const content = await loadContentAt(client, 'o/r', parseCmsConfig(cms), 'old1');
+    expect(content.data.resources).toHaveLength(2);
+    expect(content.pages.impressum.title).toBe('Impressum');
+    expect(Object.keys(content.original).sort()).toEqual(['public/content/pages/impressum.json', 'public/content/resources.json']);
+    expect(client.getRef).not.toHaveBeenCalled();
+    for (const call of client.getFileText.mock.calls) expect(call[2]).toBe('old1');
   });
 });

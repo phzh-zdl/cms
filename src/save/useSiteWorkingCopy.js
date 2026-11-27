@@ -1,12 +1,16 @@
 import { useMemo, useState } from 'react';
 import { collectChanges } from './serialize.js';
 import { imagesFromDraft } from './drafts.js';
+import { mergeSite, applyChoices } from './merge.js';
 
 // Arbeitsstand einer Seite + die Basis (zuletzt geladener/gespeicherter Stand),
 // gegen die Aenderungen, "neu" und die Commit-Beschreibung berechnet werden.
+// base.headSha = Version, auf der die Aenderungen aufbauen; base.contentSha = Version, deren
+// Inhalte in original/data/pages stehen (weicht nur bei einem Entwurf auf aelterer Basis ab).
 export function useSiteWorkingCopy(site) {
   const [base, setBase] = useState(() => ({
     headSha: site.headSha,
+    contentSha: site.headSha,
     original: site.original ?? {},
     data: site.data,
     pages: site.pages ?? {},
@@ -32,7 +36,7 @@ export function useSiteWorkingCopy(site) {
         if (c.delete) delete original[c.path];
         else if (c.text !== undefined) original[c.path] = c.text;
       }
-      return { headSha, original, data: snapshot.data, pages: snapshot.pages };
+      return { headSha, contentSha: headSha, original, data: snapshot.data, pages: snapshot.pages };
     });
     setRemovedFiles((files) => files.filter((f) => !snapshot.removedFiles.includes(f)));
     setNewImages((imgs) => imgs.filter((i) => !snapshot.newImages.includes(i)));
@@ -48,8 +52,23 @@ export function useSiteWorkingCopy(site) {
     if (draft.baseSha) setBase((b) => ({ ...b, headSha: draft.baseSha }));
   }
 
+  // Nach dem Zusammenfuehren: neue Basis (der inzwischen gespeicherte Stand) und zusammengefuehrter
+  // Arbeitsstand. from = der Arbeitsstand, der zusammengefuehrt wurde. Wurde seither weiter
+  // bearbeitet, bleiben diese neueren Aenderungen erhalten (sie gehen vor).
+  function rebase(nextBase, from, merged) {
+    const preferMine = (b, m, t) => {
+      const r = mergeSite(site.config, b, m, t);
+      return applyChoices(r, r.conflicts.map(() => 'mine'));
+    };
+    setBase(nextBase);
+    setData((cur) => (cur === from.data ? merged.data
+      : preferMine({ data: from.data }, { data: cur }, { data: merged.data }).data));
+    setPages((cur) => (cur === from.pages ? merged.pages
+      : preferMine({ pages: from.pages }, { pages: cur }, { pages: merged.pages }).pages));
+  }
+
   return {
     base, data, setData, pages, setPages, removedFiles, setRemovedFiles, newImages, setNewImages,
-    changes, dirty: changes.length > 0, markSaved, restore,
+    changes, dirty: changes.length > 0, markSaved, restore, rebase,
   };
 }

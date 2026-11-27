@@ -49,12 +49,9 @@ export async function listSites(client, org = DEFAULT_ORG) {
   });
 }
 
-export async function loadSite(client, repo) {
-  const headSha = await client.getRef(repo, BRANCH);
-  const original = {};
-
+function readers(client, repo, sha, original) {
   async function readText(path) {
-    const file = await client.getFileText(repo, path, headSha);
+    const file = await client.getFileText(repo, path, sha);
     if (!file) throw new Error(`Datei fehlt: ${path}`);
     original[path] = file.text;
     return file.text;
@@ -67,15 +64,25 @@ export async function loadSite(client, repo) {
       throw new Error(`Datei ist kein gültiges JSON: ${path}`);
     }
   }
+  return { readText, readJson };
+}
 
-  const config = parseConfigText(await readText('cms.json'));
-  delete original['cms.json'];
-
+// Inhalte (Sammlungen + Textseiten) einer bestimmten Version; die cms.json bleibt die gegebene.
+export async function loadContentAt(client, repo, config, sha) {
+  const original = {};
+  const { readJson } = readers(client, repo, sha, original);
   const data = {};
   const pages = {};
   await Promise.all([
     ...config.collections.map(async (c) => { data[c.id] = await readJson(contentPath(config, c.file)); }),
     ...config.pages.map(async (p) => { pages[p.id] = await readJson(contentPath(config, p.file)); }),
   ]);
+  return { original, data, pages };
+}
+
+export async function loadSite(client, repo) {
+  const headSha = await client.getRef(repo, BRANCH);
+  const config = parseConfigText(await readers(client, repo, headSha, {}).readText('cms.json'));
+  const { original, data, pages } = await loadContentAt(client, repo, config, headSha);
   return { repo, config, headSha, original, data, pages };
 }

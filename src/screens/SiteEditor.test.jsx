@@ -53,14 +53,16 @@ function fakeClient(fail = {}) {
     if (fail[name]) throw fail[name];
     return result;
   };
+  let head = 'head0'; // Stand von main: folgt jeder erfolgreichen Speicherung
   return {
     calls,
+    getRef: async (...a) => { calls.push(['getRef', ...a]); return head; },
     getCommit: step('getCommit', { treeSha: 'tree0' }),
     getTree: step('getTree', [{ path: 'content/categories.json', type: 'blob', sha: 'x', mode: '100644' }]),
     createBlob: step('createBlob', 'blob1'),
     createTree: step('createTree', 'tree1'),
     createCommit: step('createCommit', 'commit1'),
-    updateRef: step('updateRef', undefined),
+    updateRef: async (...a) => { await step('updateRef', undefined)(...a); head = a[2]; },
   };
 }
 
