@@ -17,7 +17,7 @@ function compare(collection, a, b) {
 
 // Liste mit Suche + Formular. data = Arbeitsstand aller Sammlungen,
 // original = urspruenglich geladene Daten (fuer "neu"), onChange(rows) ersetzt diese Sammlung.
-export default function CollectionView({ collection, data, original, collections, onChange }) {
+export default function CollectionView({ collection, data, original, collections, onChange, planFor, onDelete }) {
   const rows = data[collection.id] ?? [];
   const [query, setQuery] = useState('');
   // Offener Eintrag: Position in rows; isNew wird beim Oeffnen festgelegt,
@@ -34,7 +34,9 @@ export default function CollectionView({ collection, data, original, collections
     return (
       <EntryForm collection={collection} entry={entry} data={data} collections={collections} isNew={open.isNew}
         onChange={(next) => onChange(rows.map((r, i) => (i === open.index ? next : r)))}
-        onBack={() => setOpen(null)} />
+        onBack={() => setOpen(null)}
+        planFor={planFor}
+        onDelete={onDelete && ((id, opts) => { setOpen(null); onDelete(id, opts); })} />
     );
   }
 

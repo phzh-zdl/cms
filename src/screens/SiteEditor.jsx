@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import CollectionView from '../editor/CollectionView.jsx';
+import { planDelete, applyDelete } from '../content/deleteRules.js';
 
 // Seitenleiste + Hauptbereich. Der Arbeitsstand (data) lebt hier; Textseiten folgen später.
 export default function SiteEditor({ site, onBack }) {
   const { config } = site;
   const [data, setData] = useState(() => structuredClone(site.data));
+  // Dateien (volle Repo-Pfade), die beim Speichern geloescht werden muessen (Task 8).
+  const [removedFiles, setRemovedFiles] = useState([]);
   const [current, setCurrent] = useState(() =>
     config.collections[0]
       ? { kind: 'collection', id: config.collections[0].id }
@@ -44,6 +47,12 @@ export default function SiteEditor({ site, onBack }) {
         {current?.kind === 'collection' && item && (
           <CollectionView key={item.id} collection={item} data={data} original={site.data}
             collections={config.collections}
+            planFor={(id) => planDelete(data, config, item.id, id)}
+            onDelete={(id, opts) => {
+              const result = applyDelete(data, config, item.id, id, opts);
+              setData(result.data);
+              setRemovedFiles((files) => [...new Set([...files, ...result.removedFiles])]);
+            }}
             onChange={(rows) => setData((d) => ({ ...d, [item.id]: rows }))} />
         )}
         {current?.kind === 'page' && item && <h1>{item.label}</h1>}
