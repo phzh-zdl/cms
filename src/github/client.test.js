@@ -40,9 +40,11 @@ describe('github client', () => {
 
   it('getFileText dekodiert UTF-8 aus base64 mit Zeilenumbrüchen', async () => {
     const b64 = toB64('Grüezi «Zürich»')
-    const f = fake(res(200, { content: b64.slice(0, 8) + '\n' + b64.slice(8) + '\n', sha: 's1' }))
+    const f = fake(res(200, { content: b64.slice(0, 8) + '\n' + b64.slice(8) + '\n', encoding: 'base64', sha: 's1' }))
     const r = await createClient('t', f).getFileText('o/r', 'a b/ü.md', 'main')
     expect(r).toEqual({ text: 'Grüezi «Zürich»', sha: 's1' })
+    expect(f.calls).toHaveLength(1)
+    expect(f.calls[0].url).not.toContain('/git/blobs')
     expect(f.calls[0].url).toBe('https://api.github.com/repos/o/r/contents/a%20b/%C3%BC.md?ref=main')
   })
 
