@@ -85,6 +85,8 @@ export function createClient(token, fetchImpl = (...a) => fetch(...a)) {
 
   const json = async (...a) => (await request(...a)).json()
 
+  const getBlob = async (repo, sha) => base64ToBytes((await json(`/repos/${repo}/git/blobs/${sha}`)).content)
+
   return {
     async getUser() {
       const u = await json('/user')
@@ -112,16 +114,20 @@ export function createClient(token, fetchImpl = (...a) => fetch(...a)) {
       return t.tree.map(({ path, type, sha, mode }) => ({ path, type, sha, mode }))
     },
 
-    async getBlob(repo, sha) {
-      return base64ToBytes((await json(`/repos/${repo}/git/blobs/${sha}`)).content)
-    },
+    getBlob,
 
     async getFileText(repo, path, ref) {
-      const res = await raw(`/repos/${repo}/contents/${encodePath(path)}?ref=${encodeURIComponent(ref)}`)
+      const query = ref ? `?ref=${encodeURIComponent(ref)}` : ''
+      const res = await raw(`/repos/${repo}/contents/${encodePath(path)}${query}`)
       if (res.status === 404) return null
       if (!res.ok) throw await fail(res)
       const f = await res.json()
-      return { text: new TextDecoder().decode(base64ToBytes(f.content)), sha: f.sha }
+      if (Array.isArray(f)) {
+        throw new GitHubError(res.status, `Erwartet wurde eine Datei, gefunden wurde ein Ordner: ${path}`)
+      }
+      // Dateien über 1 MB liefert die Contents-API ohne Inhalt (encoding "none")
+      const bytes = f.encoding === 'base64' ? base64ToBytes(f.content) : await getBlob(repo, f.sha)
+      return { text: new TextDecoder().decode(bytes), sha: f.sha }
     },
 
     async createBlob(repo, bytes) {

@@ -46,6 +46,29 @@ describe('github client', () => {
     expect(f.calls[0].url).toBe('https://api.github.com/repos/o/r/contents/a%20b/%C3%BC.md?ref=main')
   })
 
+  it('getFileText falls back to the blob API for files over 1 MB', async () => {
+    const f = fake(
+      res(200, { content: '', encoding: 'none', sha: 'abc' }),
+      res(200, { content: toB64('Grüezi ä') }),
+    )
+    const r = await createClient('t', f).getFileText('o/r', 'big.md', 'main')
+    expect(r).toEqual({ text: 'Grüezi ä', sha: 'abc' })
+    expect(f.calls[1].url).toBe('https://api.github.com/repos/o/r/git/blobs/abc')
+  })
+
+  it('getFileText rejects a directory path with a German message', async () => {
+    const f = fake(res(200, [{ name: 'a.md' }]))
+    const err = await createClient('t', f).getFileText('o/r', 'dir', 'main').catch((e) => e)
+    expect(err).toBeInstanceOf(GitHubError)
+    expect(err.message).toBe('Erwartet wurde eine Datei, gefunden wurde ein Ordner: dir')
+  })
+
+  it('getFileText omits ref when not given', async () => {
+    const f = fake(res(200, { content: toB64('x'), encoding: 'base64', sha: 's' }))
+    await createClient('t', f).getFileText('o/r', 'a.md')
+    expect(f.calls[0].url).toBe('https://api.github.com/repos/o/r/contents/a.md')
+  })
+
   it('getFileText gibt null bei 404', async () => {
     const f = fake(res(404, { message: 'Not Found' }))
     expect(await createClient('t', f).getFileText('o/r', 'x.md', 'main')).toBeNull()
