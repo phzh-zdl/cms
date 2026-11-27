@@ -10,8 +10,8 @@ export default function UsageList({ data, collections, collectionId, id, onOpen 
     const headingId = `${baseId}-${collection.id}`;
     return (
       <section key={collection.id} className="usage" aria-labelledby={headingId}>
-        <h2 id={headingId}>Verwendet von {rows.length} {collection.label}</h2>
-        {rows.length === 0 ? <p>Wird von keiner {collection.label} verwendet.</p> : (
+        <h2 id={headingId}>Verwendet von: {collection.label} ({rows.length})</h2>
+        {rows.length === 0 ? <p>Keine Verwendung in {collection.label}.</p> : (
           <ul className="pick-list">
             {rows.map((row) => {
               const title = displayTitle(collection, row);

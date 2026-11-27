@@ -273,7 +273,7 @@ Trefferzahl per `aria-live`). Sie ändert nur den Arbeitsstand der Sammlung — 
 ### „Verwendet von"
 
 Zeigt eine andere Sammlung per `reference`/`reference-multi` auf diese, steht unter dem
-Eintragsformular je verweisender Sammlung ein Abschnitt „Verwendet von N <Label>" mit den
+Eintragsformular je verweisender Sammlung ein Abschnitt „Verwendet von: <Label> (N)" (leer: „Keine Verwendung in <Label>.") mit den
 verweisenden Einträgen und „Öffnen" (`src/editor/UsageList.jsx`). Grundlage ist der
 **Arbeitsstand** (ungespeicherte Zuordnungen zählen). Bei neuen Einträgen entfällt der
 Abschnitt. Gezählt wird mit `src/content/references.js` — dieselbe Funktion nutzen die

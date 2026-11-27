@@ -389,7 +389,7 @@ Bei Fachbereichen, Zielstufen, Formaten und Lizenzen zeigt das CMS, welche Resso
 Eintrag verwenden.
 
 1. Wähle links zum Beispiel **Fachbereiche** und öffne einen Eintrag.
-2. Unter dem Formular steht **Verwendet von N Ressourcen** mit der Liste der Ressourcen.
+2. Unter dem Formular steht **Verwendet von: Ressourcen (N)** mit der Liste der Ressourcen.
    Ungespeicherte Änderungen zählen schon mit.
 3. **Öffnen** springt zur Ressource. Deine ungespeicherten Änderungen bleiben erhalten.
 

@@ -230,6 +230,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .field-count { margin: var(--s-1) 0 0; font-size: var(--fs-sm); color: var(--ink-3); text-align: right; }
 .hint { margin: 0; font-size: var(--fs-sm); color: var(--ink-3); }
 .field-fixed { margin: 0 0 var(--s-1); }
+.field-fixed > dd { margin: 0; }
 .field-value { overflow-wrap: anywhere; }
 .field input + .hint { margin-top: var(--s-1); }
 

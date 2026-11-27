@@ -22,7 +22,7 @@ describe('Verwendet von', () => {
     const c = await start();
     await click(nav(c, 'Fachbereiche'));
     await openEntry(c, 'Natur');
-    expect(usage(c)).toEqual([{ heading: 'Verwendet von 2 Ressourcen', rows: ['Alpha', 'Gamma'], empty: null }]);
+    expect(usage(c)).toEqual([{ heading: 'Verwendet von: Ressourcen (2)', rows: ['Alpha', 'Gamma'], empty: null }]);
   });
 
   it('ungespeicherte Zuordnung zählt', async () => {
@@ -31,7 +31,7 @@ describe('Verwendet von', () => {
     await select(c.querySelector('#field-category_id'), 'natur');
     await click(nav(c, 'Fachbereiche'));
     await openEntry(c, 'Natur');
-    expect(usage(c)[0].heading).toBe('Verwendet von 3 Ressourcen');
+    expect(usage(c)[0].heading).toBe('Verwendet von: Ressourcen (3)');
     expect(usage(c)[0].rows).toEqual(['Alpha', 'Beta', 'Gamma']);
   });
 
@@ -40,8 +40,8 @@ describe('Verwendet von', () => {
     await click(nav(c, 'Zielstufen'));
     await openEntry(c, 'Sekundarstufe');
     expect(usage(c)).toEqual([
-      { heading: 'Verwendet von 1 Ressourcen', rows: ['Alpha'], empty: null },
-      { heading: 'Verwendet von 1 Anlässe', rows: ['Tagung'], empty: null },
+      { heading: 'Verwendet von: Ressourcen (1)', rows: ['Alpha'], empty: null },
+      { heading: 'Verwendet von: Anlässe (1)', rows: ['Tagung'], empty: null },
     ]);
   });
 
@@ -49,7 +49,7 @@ describe('Verwendet von', () => {
     const c = await start();
     await click(nav(c, 'Zielstufen'));
     await openEntry(c, 'Primarstufe');
-    expect(usage(c)).toEqual([{ heading: 'Verwendet von 0 Ressourcen', rows: [], empty: 'Wird von keiner Ressourcen verwendet.' }]);
+    expect(usage(c)).toEqual([{ heading: 'Verwendet von: Ressourcen (0)', rows: [], empty: 'Keine Verwendung in Ressourcen.' }]);
   });
 
   it('neuer Eintrag: kein Abschnitt; Sammlung ohne Verweise: kein Abschnitt', async () => {

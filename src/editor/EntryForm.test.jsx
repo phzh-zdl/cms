@@ -81,10 +81,13 @@ describe('EntryForm', () => {
   it('bestehender Eintrag: Slug als Text mit Hinweis, kein Eingabefeld', async () => {
     const c = await render(<EntryForm {...base} collection={categories} entry={data.categories[0]} isNew={false} />);
     expect(c.querySelector('input[id="field-id"]')).toBeNull();
-    const shown = c.querySelector('[id="field-id"]');
-    expect(shown.textContent).toBe('IDnatur');
-    expect(c.querySelector(`#${shown.getAttribute('aria-describedby')}`).textContent)
+    const dl = c.querySelector('dl.field-fixed');
+    expect(dl.querySelector('dt').textContent).toBe('ID');
+    expect(dl.querySelector('dd').textContent).toBe('natur');
+    expect(dl.querySelector('dd').id).toBe('field-id');
+    expect(dl.nextElementSibling.textContent)
       .toBe('Wurde beim Anlegen festgelegt und kann nicht mehr geändert werden, weil andere Einträge darauf verweisen.');
+    expect(dl.querySelector('[aria-describedby]')).toBeNull();
   });
   it('UUID: immer als Text mit Hinweis, auch bei neuen Eintraegen', async () => {
     for (const isNew of [true, false]) {

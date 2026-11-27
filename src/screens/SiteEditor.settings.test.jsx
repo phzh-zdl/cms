@@ -42,7 +42,7 @@ describe('Einstellungen', () => {
     await click(button(c, 'Speichern'));
     const alert = c.querySelector('.save-bar [role="alert"]');
     expect(alert.textContent).toContain('Bitte zuerst die markierten Fehler beheben.');
-    expect(alert.textContent).toContain('Karussell');
+    expect([...alert.querySelectorAll('li')].map((li) => li.textContent)).toEqual(['Karussell (Im Fokus)']);
     expect(client.calls.filter((x) => x[0] === 'createCommit')).toHaveLength(0);
   });
 
@@ -69,6 +69,14 @@ describe('Einstellungen', () => {
     expect(written['content/carousel.json']).toBe(serializeJson(saved));
     expect(client.calls.find((x) => x[0] === 'createCommit')[2]).toBe('Einstellungen „Karussell“ geändert');
     expect(c.textContent).toContain('Alle Änderungen gespeichert.');
+  });
+
+  it('eigenständige Einstellung mit Fehler: Sperre nennt die Einstellung selbst', async () => {
+    const c = await render(<SiteEditor site={makeSite({ views: [] })} client={repoClient()} onBack={() => {}} />);
+    await click(nav(c, 'Karussell'));
+    await type(c.querySelector('#field-count'), '2');
+    await click(button(c, 'Speichern'));
+    expect([...c.querySelectorAll('.save-bar [role="alert"] li')].map((li) => li.textContent)).toEqual(['Karussell']);
   });
 
   it('eigenständige Einstellung ohne Ansicht: Gruppe Einstellungen mit eigenem Formular', async () => {

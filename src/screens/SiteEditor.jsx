@@ -85,7 +85,11 @@ export default function SiteEditor({ site, client, onBack }) {
   const invalidSettings = (config.settings ?? []).filter((st) =>
     settings[st.name] !== undefined && Object.keys(settingsErrors(st, settings[st.name])).length > 0);
   const invalid = [...invalidCollections, ...invalidSettings];
-  const blocked = blockRequested && invalid.length > 0 ? invalid.map((c) => c.label) : null;
+  // Genannt wird der Navigationspunkt, unter dem sich der Fehler beheben laesst (bei Einstellungen ggf. die Ansicht).
+  const fixLabel = (x) => (config.settings ?? []).includes(x)
+    ? ((config.views ?? []).find((v) => v.settings === x.name)?.label ?? x.label)
+    : x.label;
+  const blocked = blockRequested && invalid.length > 0 ? invalid.map(fixLabel) : null;
 
   async function handleSave() {
     setResult(null);
