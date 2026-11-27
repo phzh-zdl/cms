@@ -1,0 +1,59 @@
+# Veröffentlicht das CMS bei jedem Push auf main auf GitHub Pages.
+# Ergebnis: https://phzh-zdl.github.io/cms/ (die relativen Pfade via base './'
+# in vite.config.js sorgen dafür, dass die Seite im Unterordner /cms/ läuft).
+# Ablauf: Tests und Build in einem Job ohne Schreibrechte, danach ein
+# separater Deploy-Job, der als einziger Pages-/OIDC-Rechte bekommt.
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Nie zwei Veröffentlichungen gleichzeitig; eine laufende wird nicht abgebrochen,
+# damit keine halb veröffentlichte Seite entsteht.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: "npm"
+      - name: Install dependencies
+        run: npm ci
+      - name: Tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # Nur hier: Schreibrecht auf Pages und OIDC-Token für die Veröffentlichung.
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,45 @@
+# Nächtliche Sicherung: spiegelt jedes Inhalts-Repo als Branches <repo>/<branch>
+# und Tags <repo>/<tag> in dieses Backup-Repo (phzh-zdl/backup).
+#
+# Zeit: 01:00 UTC = 02:00 in Zürich im Winter (MEZ), 03:00 im Sommer (MESZ),
+# weil GitHub-Cron immer in UTC läuft und keine Sommerzeit kennt.
+#
+# Kein Force-Push: Wurde in einem Inhalts-Repo die Historie umgeschrieben,
+# lehnt GitHub den Push als non-fast-forward ab, der Lauf schlägt fehl und
+# GitHub schickt den Admins eine Mail. So überschreibt ein Unfall im
+# Inhalts-Repo nie die Sicherung.
+name: mirror
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+# Der Push ins Backup läuft mit MIRROR_TOKEN, nicht mit GITHUB_TOKEN.
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    strategy:
+      # Ein fehlschlagendes Repo soll die anderen nicht verdecken.
+      fail-fast: false
+      matrix:
+        # Hier neue Inhalts-Repos eintragen (Organisation phzh-zdl).
+        repo:
+          - oer-dashboard
+    steps:
+      - name: Mirror ${{ matrix.repo }}
+        env:
+          # Das Token landet nur in dieser Umgebungsvariable, nie in der Befehlszeile
+          # des Workflows und wird nicht ausgegeben.
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+          REPO: ${{ matrix.repo }}
+        run: |
+          set -euo pipefail
+          git clone --mirror "https://x-access-token:${MIRROR_TOKEN}@github.com/phzh-zdl/${REPO}.git" source.git
+          cd source.git
+          git push "https://x-access-token:${MIRROR_TOKEN}@github.com/phzh-zdl/backup.git" \
+            "refs/heads/*:refs/heads/${REPO}/*" \
+            "refs/tags/*:refs/tags/${REPO}/*"
