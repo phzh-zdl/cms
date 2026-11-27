@@ -12,6 +12,8 @@ import { useDraftAutosave } from '../save/useDraftAutosave.js';
 import { loadDraft, clearDraft, settleDraftAfterSave } from '../save/drafts.js';
 import { useConflictSave, MSG_BUSY, MSG_CANCELLED } from '../save/useConflictSave.js';
 import { UnmergeableError } from '../save/merge.js';
+import ExportPanel from './ExportPanel.jsx';
+import HistoryPanel from './HistoryPanel.jsx';
 
 const DRAFT_OK = 'Ihre Änderungen sind als Entwurf gesichert.';
 const DRAFT_FAILED = 'Ihre Änderungen konnten nicht als Entwurf gesichert werden – bitte diese Seite nicht schliessen.';
@@ -161,6 +163,16 @@ export default function SiteEditor({ site, client, onBack }) {
               <ul>{config.pages.map((p) => navButton('page', p))}</ul>
             </>
           )}
+          <ul>
+            <li>
+              <button type="button" aria-current={current?.kind === 'export' ? 'page' : undefined}
+                onClick={() => setCurrent({ kind: 'export' })}>Exportieren</button>
+            </li>
+            <li>
+              <button type="button" aria-current={current?.kind === 'history' ? 'page' : undefined}
+                onClick={() => setCurrent({ kind: 'history' })}>Verlauf</button>
+            </li>
+          </ul>
         </nav>
       </aside>
       <section className="editor-main">
@@ -179,6 +191,8 @@ export default function SiteEditor({ site, client, onBack }) {
             }}
             onChange={(rows) => setData((d) => ({ ...d, [item.id]: rows }))} />
         )}
+        {current?.kind === 'export' && <ExportPanel site={site} client={client} dirty={unsaved} />}
+        {current?.kind === 'history' && <HistoryPanel site={site} client={client} />}
         {current?.kind === 'page' && item && (
           <>
             <h1>{item.label}</h1>
