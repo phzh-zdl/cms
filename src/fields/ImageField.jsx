@@ -89,11 +89,13 @@ export function Editor({ field, value, onChange, ctx, error }) {
 
   return (
     <FieldFrame field={field} error={error}>
-      {preview && <img className="image-preview" src={preview} alt={`Vorschau: ${title}`} style={{ maxWidth: '16rem', display: 'block' }} />}
-      <button type="button" ref={triggerRef} {...aria(field, error)} onClick={() => inputRef.current?.click()}>
-        {value ? 'Bild ersetzen' : 'Bild wählen'}
-      </button>
-      {value && <button type="button" onClick={remove}>Bild entfernen</button>}
+      {preview && <img className="image-preview" src={preview} alt={`Vorschau: ${title}`} />}
+      <div className="image-actions">
+        <button type="button" ref={triggerRef} {...aria(field, error)} onClick={() => inputRef.current?.click()}>
+          {value ? 'Bild ersetzen' : 'Bild wählen'}
+        </button>
+        {value && <button type="button" className="btn-danger" onClick={remove}>Bild entfernen</button>}
+      </div>
       <input ref={inputRef} type="file" hidden tabIndex={-1} aria-hidden="true" data-testid="image-input"
         accept="image/png,image/jpeg,image/webp,image/gif" onChange={onFile} />
       {problem && <p role="alert">{problem}</p>}

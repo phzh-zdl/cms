@@ -41,7 +41,7 @@ export default function DeleteDialog({ plan, options, onConfirm, onCancel }) {
         <h2 id="delete-title">Eintrag löschen</h2>
         <p>{text}</p>
         {reassign && (
-          <p>
+          <p className="dialog-field">
             <label htmlFor="delete-target">Verschieben nach</label>
             <select id="delete-target" ref={firstRef} value={target} onChange={(e) => setTarget(e.target.value)}>
               <option value="">Bitte wählen</option>
@@ -51,7 +51,7 @@ export default function DeleteDialog({ plan, options, onConfirm, onCancel }) {
         )}
         <div className="dialog-actions">
           <button type="button" onClick={onCancel}>Abbrechen</button>
-          <button type="button" ref={reassign ? undefined : firstRef} disabled={reassign && !target}
+          <button type="button" className="btn-danger" ref={reassign ? undefined : firstRef} disabled={reassign && !target}
             onClick={() => onConfirm(reassign ? { reassignTo: target } : {})}>
             Löschen
           </button>

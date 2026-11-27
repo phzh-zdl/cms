@@ -22,9 +22,11 @@ export default function HistoryPanel({ site, client }) {
       {!error && !items && <p role="status">Wird geladen …</p>}
       {items && items.length === 0 && <p>Noch keine Änderungen.</p>}
       {items && items.length > 0 && (
-        <ul>
+        <ul className="history-list">
           {items.map((h, i) => (
-            <li key={i}>{fmt(h.when)} — {h.who}: {h.message}</li>
+            <li key={i}>
+              <span className="history-when">{fmt(h.when)}</span> — <span className="history-who">{h.who}</span>: <span className="history-message">{h.message}</span>
+            </li>
           ))}
         </ul>
       )}

@@ -19,7 +19,7 @@ export default function PageLinkForm({ pageIds, onSubmit, onCancel }) {
           </select>
         )}
       <div className="link-form-actions">
-        <button type="submit" disabled={!pick}>Übernehmen</button>
+        <button type="submit" className="btn-primary" disabled={!pick}>Übernehmen</button>
         <button type="button" onClick={onCancel}>Abbrechen</button>
       </div>
     </form>

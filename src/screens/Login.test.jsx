@@ -45,6 +45,16 @@ describe('Login', () => {
     expect(hint.textContent).toBe('Nur auf persönlichen Geräten');
   });
 
+  it('links the guide permanently, also without any error', () => {
+    const el = render(<Login onLogin={() => {}} />);
+    expect(el.querySelector('[role="alert"]')).toBeNull();
+    const help = el.querySelector('.login-help');
+    expect(help.textContent).toContain('Noch keinen Zugangsschlüssel?');
+    const link = help.querySelector('a');
+    expect(link.textContent).toBe('Anleitung: Zugangsschlüssel erstellen');
+    expect(link.getAttribute('href')).toBe('./anleitung.html#zugangsschluessel');
+  });
+
   it('shows a field error for an empty token without calling the client', async () => {
     const createClientImpl = vi.fn();
     const el = render(<Login onLogin={() => {}} createClientImpl={createClientImpl} />);

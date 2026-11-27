@@ -57,11 +57,11 @@ export default function CollectionView({ collection, data, original, collections
   return (
     <div className="collection-view">
       <h1>{collection.label}</h1>
-      <p>{rows.length === 1 ? '1 Eintrag' : `${rows.length} Einträge`}</p>
+      <p className="count">{rows.length === 1 ? '1 Eintrag' : `${rows.length} Einträge`}</p>
       <div className="list-tools">
         <label htmlFor="entry-search">Suchen</label>
         <input id="entry-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <button type="button" onClick={create}>Neu</button>
+        <button type="button" className="btn-primary" onClick={create}>Neu</button>
       </div>
       <ul className="entry-list">
         {shown.map(({ row, index }) => (

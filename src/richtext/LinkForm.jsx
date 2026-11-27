@@ -25,7 +25,7 @@ export default function LinkForm({ initial = '', onSubmit, onCancel, onRemove })
         aria-describedby={error ? `${id}-err` : undefined} onChange={(e) => { setUrl(e.target.value); setError(''); }} />
       {error && <p className="field-error" id={`${id}-err`} role="alert">{error}</p>}
       <div className="link-form-actions">
-        <button type="submit">Übernehmen</button>
+        <button type="submit" className="btn-primary">Übernehmen</button>
         <button type="button" onClick={onCancel}>Abbrechen</button>
         {initial && <button type="button" onClick={onRemove}>Link entfernen</button>}
       </div>

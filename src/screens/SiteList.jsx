@@ -22,7 +22,7 @@ export default function SiteList({ client, onSelect }) {
         <p>Keine Seiten gefunden. Ihr Zugangsschlüssel hat keinen Zugriff auf eine Seite mit CMS-Beschreibung.</p>
       )}
       {state.status === 'done' && state.sites.length > 0 && (
-        <ul>
+        <ul className="site-rows">
           {state.sites.map((s) => (
             <li key={s.repo}>
               {s.error ? (

@@ -14,8 +14,8 @@ const IMAGES = resolve(root, 'docs/bilder');
 
 // Kleine, in sich geschlossene Seite; Farben wie in src/styles.css. Kein externes Laden.
 const STYLE = `
-:root { --bg:#fbfbfc; --ink:#1b1b1f; --ink-2:#4a4d55; --accent:#b2156d; --line-ui:#8f8d76; --surface-2:#f3f4f7; }
-@media (prefers-color-scheme: dark) { :root { --bg:#16181d; --ink:#f3f4f7; --ink-2:#b8bcc6; --accent:#ff6bb5; --surface-2:#22252c; } }
+:root { --bg:#fbfbfc; --ink:#1b1b1f; --ink-2:#4a4d55; --ink-3:#6a6d75; --accent:#b2156d; --line-ui:#8f8d76; --line-soft:#dddcd1; --surface-2:#f3f4f7; }
+@media (prefers-color-scheme: dark) { :root { --bg:#16181d; --ink:#f3f4f7; --ink-2:#b8bcc6; --ink-3:#9a9ea8; --accent:#ff6bb5; --line-soft:#3a3d45; --surface-2:#22252c; } }
 body { margin:0; background:var(--bg); color:var(--ink); font:500 1rem/1.6 'Helvetica Neue', Helvetica, Arial, sans-serif; }
 main { max-width:44rem; margin:0 auto; padding:1rem 16px 4rem; }
 h1, h2, h3 { font-weight:800; line-height:1.25; }
@@ -23,6 +23,8 @@ a { color:var(--accent); }
 a:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
 img { max-width:100%; height:auto; border:1px solid var(--line-ui); }
 code { background:var(--surface-2); padding:0 0.25em; border-radius:4px; }
+/* Platzhalter für noch fehlende Screenshots */
+.bild-folgt { display:flex; align-items:center; justify-content:center; box-sizing:border-box; width:100%; max-width:640px; aspect-ratio:16 / 9; margin:1rem 0; padding:1rem; border:2px dashed var(--line-soft); border-radius:10px; color:var(--ink-3); text-align:center; }
 blockquote { margin:1rem 0; padding:0.25rem 1rem; border-left:4px solid var(--line-ui); color:var(--ink-2); }
 `;
 
@@ -41,10 +43,25 @@ const renderer = {
     return `<a href="${escapeHtml(href)}"${t}>${text}</a>`;
   },
 };
-const marked = new Marked({ renderer });
+// Bilder: nur Dateien direkt in docs/bilder. Fehlt die Datei (Screenshots folgen noch),
+// erscheint ein ruhiger Platzhalter statt eines kaputten Bildes.
+const IMAGE_SRC = /^bilder\/([A-Za-z0-9_-]+\.(?:png|jpe?g|webp|gif))$/;
+const fileInImages = (name) => existsSync(resolve(IMAGES, name));
+const imageRenderer = (imageExists) => ({
+  image({ href, text }) {
+    const alt = escapeHtml(String(text ?? ''));
+    const name = IMAGE_SRC.exec(String(href ?? '').trim())?.[1];
+    if (name && imageExists(name)) return `<img src="bilder/${name}" alt="${alt}" loading="lazy">`;
+    return `<figure class="bild-folgt"><span>Bild folgt: ${alt}</span></figure>`;
+  },
+});
 
-export function renderAnleitung(markdown) {
-  const body = marked.parse(markdown, { async: false });
+// options.imageExists(name): ob docs/bilder/<name> existiert (Standard: Dateisystem; für Tests ersetzbar).
+export function renderAnleitung(markdown, { imageExists = fileInImages } = {}) {
+  const marked = new Marked({ renderer: { ...renderer, ...imageRenderer(imageExists) } });
+  // Ein Platzhalter allein im Absatz: <figure> darf nicht in <p> stehen.
+  const body = marked.parse(markdown, { async: false })
+    .replace(/<p>(<figure class="bild-folgt">.*?<\/figure>)<\/p>/g, '$1');
   return `<!doctype html>
 <html lang="de">
 <head>

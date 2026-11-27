@@ -129,7 +129,7 @@ export default function SiteEditor({ site, client, onBack }) {
     const active = current?.kind === kind && current.id === entry.id;
     return (
       <li key={`${kind}:${entry.id}`}>
-        <button type="button" aria-current={active ? 'page' : undefined} onClick={() => setCurrent({ kind, id: entry.id })}>
+        <button type="button" className="nav-item" aria-current={active ? 'page' : undefined} onClick={() => setCurrent({ kind, id: entry.id })}>
           {entry.label}
         </button>
       </li>
@@ -140,12 +140,14 @@ export default function SiteEditor({ site, client, onBack }) {
     return (
       <section className="draft-prompt">
         <p>Es gibt ungespeicherte Änderungen vom {draftDate(pendingDraft.savedAt)}. Wiederherstellen?</p>
-        <button type="button" onClick={() => {
-          wc.restore(pendingDraft);
-          if (pendingDraft.baseSha && pendingDraft.baseSha !== site.headSha) conflictSave.announce();
-          setPendingDraft(null);
-        }}>Wiederherstellen</button>
-        <button type="button" onClick={() => { clearDraft(site.repo); setPendingDraft(null); }}>Verwerfen</button>
+        <div className="actions">
+          <button type="button" className="btn-primary" onClick={() => {
+            wc.restore(pendingDraft);
+            if (pendingDraft.baseSha && pendingDraft.baseSha !== site.headSha) conflictSave.announce();
+            setPendingDraft(null);
+          }}>Wiederherstellen</button>
+          <button type="button" onClick={() => { clearDraft(site.repo); setPendingDraft(null); }}>Verwerfen</button>
+        </div>
       </section>
     );
   }
@@ -153,31 +155,37 @@ export default function SiteEditor({ site, client, onBack }) {
   return (
     <div className="editor">
       <aside className="editor-side">
-        <button type="button" onClick={onBack}>Zurück zur Seitenauswahl</button>
-        <p className="site-name">{config.name}</p>
-        <nav aria-label="Inhalte">
-          <ul>{config.collections.map((c) => navButton('collection', c))}</ul>
-          {config.pages.length > 0 && (
-            <>
-              <h2>Textseiten</h2>
-              <ul>{config.pages.map((p) => navButton('page', p))}</ul>
-            </>
+        <button type="button" className="btn-ghost back-to-sites" onClick={onBack}>Zurück zur Seitenauswahl</button>
+        {/* Seitenname steht in der App-Leiste. Gruppen: Inhalte, Textseiten, abgesetzt Veröffentlichen. */}
+        <nav aria-label="Inhalte" className="side-nav">
+          {config.collections.length > 0 && (
+            <div className="nav-group">
+              <h2 className="nav-heading" id="nav-inhalte">Inhalte</h2>
+              <ul aria-labelledby="nav-inhalte">{config.collections.map((c) => navButton('collection', c))}</ul>
+            </div>
           )}
-          <ul>
-            <li>
-              <button type="button" aria-current={current?.kind === 'export' ? 'page' : undefined}
-                onClick={() => setCurrent({ kind: 'export' })}>Exportieren</button>
-            </li>
-            <li>
-              <button type="button" aria-current={current?.kind === 'history' ? 'page' : undefined}
-                onClick={() => setCurrent({ kind: 'history' })}>Verlauf</button>
-            </li>
-          </ul>
+          {config.pages.length > 0 && (
+            <div className="nav-group">
+              <h2 className="nav-heading" id="nav-textseiten">Textseiten</h2>
+              <ul aria-labelledby="nav-textseiten">{config.pages.map((p) => navButton('page', p))}</ul>
+            </div>
+          )}
+          <div className="nav-group nav-group-publish">
+            <h2 className="nav-heading" id="nav-veroeffentlichen">Veröffentlichen</h2>
+            <ul aria-labelledby="nav-veroeffentlichen">
+              <li>
+                <button type="button" className="nav-item" aria-current={current?.kind === 'export' ? 'page' : undefined}
+                  onClick={() => setCurrent({ kind: 'export' })}>Exportieren</button>
+              </li>
+              <li>
+                <button type="button" className="nav-item" aria-current={current?.kind === 'history' ? 'page' : undefined}
+                  onClick={() => setCurrent({ kind: 'history' })}>Verlauf</button>
+              </li>
+            </ul>
+          </div>
         </nav>
       </aside>
       <section className="editor-main">
-        <SaveBar dirty={dirty} saving={saving} onSave={handleSave} result={result} blocked={blocked}
-          draftFailed={autosave.failed} />
         {conflictSave.notice && <p role="status" className="note">{conflictSave.notice}</p>}
         {conflictSave.dialog && <ConflictDialog {...conflictSave.dialog} />}
         {current?.kind === 'collection' && item && (
@@ -194,14 +202,17 @@ export default function SiteEditor({ site, client, onBack }) {
         {current?.kind === 'export' && <ExportPanel site={site} client={client} dirty={unsaved} />}
         {current?.kind === 'history' && <HistoryPanel site={site} client={client} />}
         {current?.kind === 'page' && item && (
-          <>
+          <div className="page-view">
             <h1>{item.label}</h1>
             <PageEditor key={item.id} toolbar={item.toolbar}
               pageIds={config.pages.filter((p) => p.id !== item.id).map((p) => p.id)}
               page={pages[item.id] ?? { id: item.id, title: item.label, html: '' }}
               onChange={(next) => wc.setPages((all) => ({ ...all, [item.id]: next }))} />
-          </>
+          </div>
         )}
+        {/* Speicherleiste am Ende des Inhalts, per CSS am unteren Rand angeheftet (sticky). */}
+        <SaveBar dirty={dirty} saving={saving} onSave={handleSave} result={result} blocked={blocked}
+          draftFailed={autosave.failed} />
       </section>
     </div>
   );

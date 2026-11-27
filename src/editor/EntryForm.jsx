@@ -36,7 +36,7 @@ export default function EntryForm({ collection, entry, data, collections, isNew,
 
   return (
     <form className="entry-form" onSubmit={(e) => e.preventDefault()} noValidate>
-      <button type="button" onClick={onBack}>Zurück zur Liste</button>
+      <button type="button" className="btn-ghost" onClick={onBack}>Zurück zur Liste</button>
       {collection.fields.map((field) => {
         const { Editor, empty } = fieldTypes[field.type];
         return (
@@ -45,7 +45,9 @@ export default function EntryForm({ collection, entry, data, collections, isNew,
         );
       })}
       {onDelete && (
-        <button type="button" ref={deleteRef} onClick={() => setPlan(planFor(entry[key]))}>Löschen</button>
+        <div className="form-end">
+          <button type="button" className="btn-danger" ref={deleteRef} onClick={() => setPlan(planFor(entry[key]))}>Löschen</button>
+        </div>
       )}
       {plan && (
         <DeleteDialog plan={plan} options={options} onCancel={cancelDelete}

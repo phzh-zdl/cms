@@ -24,13 +24,13 @@ export default function ExportPanel({ site, client, dirty }) {
   return (
     <section className="export-panel">
       <h1>Exportieren</h1>
-      <p>Erstellt ein ZIP mit der fertigen Seite und allen gespeicherten Inhalten. Dieses ZIP geht ans Webcenter bzw. auf den PH-Server.</p>
-      <button type="button" disabled={dirty || busy} onClick={create}>ZIP erstellen</button>
+      <p className="lead">Erstellt ein ZIP mit der fertigen Seite und allen gespeicherten Inhalten. Dieses ZIP geht ans Webcenter bzw. auf den PH-Server.</p>
+      <button type="button" className="btn-primary" disabled={dirty || busy} onClick={create}>ZIP erstellen</button>
       {dirty && <p role="status" className="note">Bitte zuerst speichern.</p>}
-      <p aria-live="polite">
+      <p aria-live="polite" className="export-progress">
         {busy && progress ? `Dateien werden geladen … ${progress.done} von ${progress.total}` : ''}
       </p>
-      {success && <p role="status">{success}</p>}
+      {success && <p role="status" className="ok">{success}</p>}
       {error && <p role="alert">{error}</p>}
     </section>
   );

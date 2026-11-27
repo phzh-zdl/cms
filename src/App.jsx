@@ -3,6 +3,7 @@ import Login from './screens/Login.jsx';
 import { createClient, AuthError } from './github/client.js';
 import SiteList from './screens/SiteList.jsx';
 import SiteEditor from './screens/SiteEditor.jsx';
+import AppBar from './screens/AppBar.jsx';
 import { loadSite } from './content/site.js';
 import { parseSiteHash } from './content/siteHash.js';
 import { loadToken, saveToken, clearToken } from './auth/token.js';
@@ -86,13 +87,15 @@ export default function App() {
   }
 
   if (phase === 'checking') {
-    return <main className="login"><p role="status">Anmeldung wird geprüft …</p></main>;
+    return <main className="login"><div className="login-panel"><p role="status">Anmeldung wird geprüft …</p></div></main>;
   }
   if (phase === 'retry') {
     return (
       <main className="login">
-        <p role="alert" className="error">{checkError}</p>
-        <button type="button" onClick={() => setAttempt((n) => n + 1)}>Erneut versuchen</button>
+        <div className="login-panel">
+          <p role="alert" className="error">{checkError}</p>
+          <button type="button" className="btn-primary btn-block" onClick={() => setAttempt((n) => n + 1)}>Erneut versuchen</button>
+        </div>
       </main>
     );
   }
@@ -101,22 +104,19 @@ export default function App() {
   }
   const { user } = session;
   return (
-    <>
-      <header className="app-header">
-        <span>Angemeldet als {user.name || user.login}</span>
-        <button type="button" onClick={handleLogout}>Abmelden</button>
-      </header>
-      <main>
+    <div className="app">
+      <AppBar user={user} siteName={view.status === 'editor' ? view.site.config.name : null} onLogout={handleLogout} />
+      <main className="app-main">
         {view.status === 'list' && <SiteList client={session.client} onSelect={openSite} />}
-        {view.status === 'loading' && <p role="status">Seite wird geladen …</p>}
+        {view.status === 'loading' && <p role="status" className="app-message">Seite wird geladen …</p>}
         {view.status === 'error' && (
-          <>
+          <div className="app-message">
             <p role="alert" className="error">{view.message}</p>
             <button type="button" onClick={closeSite}>Zurück</button>
-          </>
+          </div>
         )}
         {view.status === 'editor' && <SiteEditor site={view.site} client={session.client} onBack={closeSite} />}
       </main>
-    </>
+    </div>
   );
 }

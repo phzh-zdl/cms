@@ -164,7 +164,7 @@ für den Fachbereich einen anderen. Danach speichern.
 4. Speichern. Erst dann ist es endgültig. Auch danach lässt sich ein früherer Stand
    über den Admin wiederherstellen (siehe Abschnitt 12).
 
-*Du müsstest jetzt* oben die Meldung „Ungespeicherte Änderungen" sehen.
+*Du müsstest jetzt* unten in der Speicherleiste die Meldung „Ungespeicherte Änderungen" sehen.
 
 ![Screenshot: Eintrag bearbeiten](bilder/eintrag.png)
 
@@ -217,7 +217,7 @@ Unter **Textseiten** (links) liegen Seiten wie Impressum, Datenschutz oder Konta
 ## 8. Speichern
 
 Alles, was du geändert hast (Einträge, Bilder, Textseiten), wird mit **einem** Klick auf
-**Speichern** (oben im Bearbeitungsbereich) gesichert.
+**Speichern** (in der Leiste am unteren Rand) gesichert.
 
 1. Klicke auf **Speichern**.
 2. Gibt es Fehler, steht oben „Bitte zuerst die markierten Fehler beheben." mit der Liste der

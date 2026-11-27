@@ -33,10 +33,39 @@ describe('renderAnleitung', () => {
     expect(renderAnleitung('nur Text')).toContain('<title>Anleitung – ZDL CMS</title>');
   });
 
-  it('entfernt Bild-Platzhalter nicht, verweist aber relativ', () => {
-    const out = renderAnleitung('![Screenshot: Anmeldung](bilder/anmeldung.png)');
+  it('zeigt vorhandene Bilder relativ, mit Alt-Text und loading="lazy"', () => {
+    const out = renderAnleitung('![Screenshot: Anmeldung](bilder/anmeldung.png)', { imageExists: () => true });
     expect(out).toContain('src="bilder/anmeldung.png"');
     expect(out).toContain('alt="Screenshot: Anmeldung"');
+    expect(out).toContain('loading="lazy"');
+    expect(out).not.toContain('bild-folgt"><span>');
+  });
+
+  it('zeigt für fehlende Bilder einen ruhigen Platzhalter statt eines kaputten Bildes', () => {
+    const seen = [];
+    const out = renderAnleitung('![Screenshot: <Anmeldung> & "Co"](bilder/fehlt.png)',
+      { imageExists: (name) => { seen.push(name); return false; } });
+    expect(seen).toEqual(['fehlt.png']);
+    expect(out).not.toMatch(/<img/i);
+    expect(out).toContain('<figure class="bild-folgt"><span>Bild folgt: Screenshot: &lt;Anmeldung&gt; &amp; &quot;Co&quot;</span></figure>');
+  });
+
+  it('prüft ohne Angabe die Dateien in docs/bilder (dort liegen noch keine Screenshots)', () => {
+    const out = renderAnleitung('![Screenshot: Anmeldung](bilder/gibt-es-nicht.png)');
+    expect(out).toContain('Bild folgt: Screenshot: Anmeldung');
+    expect(out).not.toMatch(/<img/i);
+  });
+
+  it('zeigt Bilder ausserhalb von bilder/ nie als Bild', () => {
+    for (const src of ['https://example.org/x.png', '../geheim.png', 'bilder/../x.png']) {
+      const out = renderAnleitung(`![A](${src})`, { imageExists: () => true });
+      expect(out, src).not.toMatch(/<img/i);
+      expect(out, src).toContain('Bild folgt: A');
+    }
+  });
+
+  it('gestaltet den Platzhalter in der Seite', () => {
+    expect(html).toMatch(/\.bild-folgt\s*\{[^}]*dashed/);
   });
 
   it('enthält dieselbe CSP wie das CMS', () => {

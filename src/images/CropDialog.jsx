@@ -60,13 +60,13 @@ export default function CropDialog({ src, background, onApply, onCancel }) {
       <div ref={dialogRef} className="dialog dialog-wide" role="dialog" aria-modal="true"
         aria-labelledby="crop-title" onKeyDown={onKeyDown}>
         <h2 id="crop-title">Bild zuschneiden</h2>
-        <fieldset>
+        <fieldset className="crop-mode">
           <legend>Darstellung</legend>
-          <label>
+          <label className="check-option">
             <input ref={firstRef} type="radio" name="crop-mode" value="crop" checked={mode === 'crop'}
               onChange={() => setMode('crop')} /> Zuschneiden
           </label>
-          <label>
+          <label className="check-option">
             <input type="radio" name="crop-mode" value="contain" checked={mode === 'contain'}
               onChange={() => setMode('contain')} /> Ganzes Bild zeigen
           </label>
@@ -79,9 +79,11 @@ export default function CropDialog({ src, background, onApply, onCancel }) {
                 onCropComplete={(_, pixels) => setArea(pixels)}
                 onMediaLoaded={(m) => setNaturalWidth(m.naturalWidth)} />
             </div>
-            <label htmlFor="crop-zoom">Zoom</label>
-            <input id="crop-zoom" type="range" min={1} max={3} step={0.1} value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))} />
+            <div className="crop-zoom">
+              <label htmlFor="crop-zoom">Zoom</label>
+              <input id="crop-zoom" type="range" min={1} max={3} step={0.1} value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))} />
+            </div>
           </>
         ) : (
           <div className="crop-contain" style={{
@@ -91,11 +93,11 @@ export default function CropDialog({ src, background, onApply, onCancel }) {
               onLoad={(e) => setNaturalWidth(e.currentTarget.naturalWidth)} />
           </div>
         )}
-        {blurry && <p role="status">Bild wird unscharf wirken</p>}
+        {blurry && <p role="status" className="crop-warning">Bild wird unscharf wirken</p>}
         {error && <p role="alert">{error}</p>}
         <div className="dialog-actions">
           <button type="button" onClick={onCancel}>Abbrechen</button>
-          <button type="button" onClick={apply} disabled={busy || (mode === 'crop' && !area)}>Übernehmen</button>
+          <button type="button" className="btn-primary" onClick={apply} disabled={busy || (mode === 'crop' && !area)}>Übernehmen</button>
         </div>
       </div>
     </div>

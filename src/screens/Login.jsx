@@ -31,42 +31,48 @@ export default function Login({ onLogin, createClientImpl = createClient }) {
 
   return (
     <main className="login">
-      <h1>ZDL CMS</h1>
-      <p>Inhalte der ZDL-Webseiten bearbeiten</p>
-      <form onSubmit={handleSubmit} noValidate>
-        <label htmlFor="token">Zugangsschlüssel</label>
-        <input
-          id="token"
-          type="password"
-          autoComplete="off"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-          aria-invalid={error ? 'true' : undefined}
-        />
-        <div className="remember">
+      <div className="login-panel">
+        <h1>ZDL CMS</h1>
+        <p className="login-sub">Inhalte der ZDL-Webseiten bearbeiten</p>
+        <form className="login-form" onSubmit={handleSubmit} noValidate>
+          <label htmlFor="token">Zugangsschlüssel</label>
           <input
-            id="remember"
-            type="checkbox"
-            checked={remember}
-            onChange={(e) => setRemember(e.target.checked)}
-            aria-describedby="remember-hint"
+            id="token"
+            type="password"
+            autoComplete="off"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            aria-invalid={error ? 'true' : undefined}
           />
-          <label htmlFor="remember">Auf diesem Gerät merken</label>
-          <p id="remember-hint" className="hint">Nur auf persönlichen Geräten</p>
-        </div>
-        {error && (
-          <p role="alert" className="error">
-            {error.message}
-            {error.help && (
-              <>
-                {' '}
-                <a href="./anleitung.html#zugangsschluessel">Anleitung: Zugangsschlüssel erstellen</a>
-              </>
-            )}
-          </p>
-        )}
-        <button type="submit" disabled={checking}>{checking ? 'Prüfe …' : 'Anmelden'}</button>
-      </form>
+          <div className="remember">
+            <input
+              id="remember"
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              aria-describedby="remember-hint"
+            />
+            <label htmlFor="remember">Auf diesem Gerät merken</label>
+            <p id="remember-hint" className="hint">Nur auf persönlichen Geräten</p>
+          </div>
+          {error && (
+            <p role="alert" className="error">
+              {error.message}
+              {error.help && (
+                <>
+                  {' '}
+                  <a href="./anleitung.html#zugangsschluessel">Anleitung: Zugangsschlüssel erstellen</a>
+                </>
+              )}
+            </p>
+          )}
+          <button type="submit" className="btn-primary btn-block" disabled={checking}>{checking ? 'Prüfe …' : 'Anmelden'}</button>
+        </form>
+        <p className="login-help">
+          Noch keinen Zugangsschlüssel?{' '}
+          <a href="./anleitung.html#zugangsschluessel">Anleitung: Zugangsschlüssel erstellen</a>
+        </p>
+      </div>
     </main>
   );
 }
