@@ -24,6 +24,7 @@ mit Abschnitt 4 los.
 12. [Verlauf ansehen](#verlauf)
 
 <a id="konto"></a>
+
 ## 1. GitHub-Konto anlegen
 
 GitHub ist der Dienst, bei dem die Inhalte gespeichert werden. Wer dort ein Konto hat und
@@ -46,6 +47,7 @@ Nimm sie an.
 ![Screenshot: GitHub-Konto](bilder/konto.png)
 
 <a id="zwei-faktor"></a>
+
 ## 2. Zwei-Faktor-Anmeldung einrichten
 
 Zwei-Faktor heisst: Zum Passwort kommt ein zweiter Nachweis, zum Beispiel ein Code aus einer
@@ -66,6 +68,7 @@ Organisation verlangt es von allen Mitgliedern.
 ![Screenshot: Zwei-Faktor](bilder/zwei-faktor.png)
 
 <a id="zugangsschluessel"></a>
+
 ## 3. Zugangsschlüssel erstellen
 
 Das CMS braucht einen persönlichen Zugangsschlüssel (bei GitHub heisst er „fine-grained
@@ -109,6 +112,7 @@ den Schlüssel anklicken → **Delete** bzw. **Revoke**. Er funktioniert sofort 
 ![Screenshot: Schlüssel erstellen](bilder/zugangsschluessel.png)
 
 <a id="anmelden"></a>
+
 ## 4. Das CMS öffnen und anmelden
 
 1. Öffne <https://phzh-zdl.github.io/cms/>.
@@ -128,6 +132,7 @@ Meldet das CMS „Dieser Zugangsschlüssel ist ungültig oder abgelaufen", erste
 ![Screenshot: Anmeldung](bilder/anmeldung.png)
 
 <a id="eintraege"></a>
+
 ## 5. Einträge bearbeiten, neu anlegen, löschen
 
 Links wählst du einen Bereich (zum Beispiel „Ressourcen"). Rechts erscheint die Liste.
@@ -164,6 +169,7 @@ für den Fachbereich einen anderen. Danach speichern.
 ![Screenshot: Eintrag bearbeiten](bilder/eintrag.png)
 
 <a id="bild"></a>
+
 ## 6. Bild hochladen und zuschneiden
 
 1. Im Eintrag beim Feld für das Bild auf **Bild wählen** klicken (bei vorhandenem Bild: **Bild ersetzen**).
@@ -188,6 +194,7 @@ für den Fachbereich einen anderen. Danach speichern.
 ![Screenshot: Bild zuschneiden](bilder/zuschneiden.png)
 
 <a id="textseiten"></a>
+
 ## 7. Textseiten bearbeiten
 
 Unter **Textseiten** (links) liegen Seiten wie Impressum, Datenschutz oder Kontakt.
@@ -206,6 +213,7 @@ Unter **Textseiten** (links) liegen Seiten wie Impressum, Datenschutz oder Konta
 ![Screenshot: Textseite](bilder/textseite.png)
 
 <a id="speichern"></a>
+
 ## 8. Speichern
 
 Alles, was du geändert hast (Einträge, Bilder, Textseiten), wird mit **einem** Klick auf
@@ -222,6 +230,7 @@ das Webcenter das exportierte ZIP eingespielt hat (Abschnitt 11).
 *Du müsstest jetzt* „Alle Änderungen gespeichert." sehen.
 
 <a id="entwurf"></a>
+
 ## 9. Entwurf wiederherstellen
 
 Ungespeicherte Änderungen werden laufend auf deinem Gerät zwischengespeichert. Schliesst du
@@ -235,6 +244,7 @@ Der Entwurf liegt nur auf diesem Gerät. Auf einem anderen Rechner oder nach dem
 der Browserdaten ist er nicht da. Speichere deshalb wichtige Änderungen bald.
 
 <a id="konflikt"></a>
+
 ## 10. Gleichzeitige Änderung lösen
 
 Hat jemand anderes in der Zwischenzeit etwas gespeichert, merkt das CMS das beim Speichern.
@@ -259,6 +269,7 @@ Stand verändert wurde („Diese Seite wurde seit dem Öffnen von … geändert.
 ![Screenshot: Gleichzeitige Änderung](bilder/konflikt.png)
 
 <a id="export"></a>
+
 ## 11. Exportieren und ZIP ans Webcenter schicken
 
 Die öffentliche Seite liegt auf einem PH-Server. Damit deine Änderungen dort erscheinen,
@@ -283,6 +294,7 @@ bzw. den Entwickler.
 ![Screenshot: Exportieren](bilder/export.png)
 
 <a id="verlauf"></a>
+
 ## 12. Verlauf ansehen
 
 Links unter **Verlauf** siehst du die letzten Änderungen: wer, wann, was. Das ist praktisch,

@@ -1,10 +1,12 @@
-// Erzeugt public/anleitung.html aus docs/ANLEITUNG.md (Vite-Plugin, nur Entwicklungswerkzeug:
+// Erzeugt dist/anleitung.html (im Dev-Modus per Middleware unter /anleitung.html) aus docs/ANLEITUNG.md
+// (Vite-Plugin, nur Entwicklungswerkzeug:
 // `marked` ist eine devDependency und gelangt nicht ins ausgelieferte CMS).
 // Das Login verlinkt auf ./anleitung.html#zugangsschluessel.
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { marked } from 'marked';
+import { Marked } from 'marked';
+import { CSP } from './csp.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCE = resolve(root, 'docs/ANLEITUNG.md');
@@ -24,12 +26,19 @@ code { background:var(--surface-2); padding:0 0.25em; border-radius:4px; }
 blockquote { margin:1rem 0; padding:0.25rem 1rem; border-left:4px solid var(--line-ui); color:var(--ink-2); }
 `;
 
+const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// Rohes HTML im Markdown wird als Text ausgegeben; einzige Ausnahme: Sprungmarken <a id="name"></a>.
+// (Block oder Inline: marked liefert <a id="x"> und </a> teils einzeln.)
+const ANCHOR = /^\s*(<a id="[a-z0-9-]+">|<\/a>|<a id="[a-z0-9-]+"><\/a>)\s*$/;
+const marked = new Marked({ renderer: { html: ({ text }) => (ANCHOR.test(text) ? text : escapeHtml(text)) } });
+
 export function renderAnleitung(markdown) {
   const body = marked.parse(markdown, { async: false });
   return `<!doctype html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="${escapeHtml(CSP)}">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Anleitung</title>
 <style>${STYLE}</style>

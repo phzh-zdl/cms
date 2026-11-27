@@ -1,14 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { CSP } from './scripts/csp.js';
 import anleitungPage from './scripts/anleitungPage.js';
 
 // Content-Security-Policy als <meta>, nur im Build: im Dev-Modus fügt Vite
 // eigene Inline-Skripte ein, die diese CSP blockieren würde.
-// Einzige externe Verbindung: die GitHub-API. blob: für Bildvorschauen.
-const CSP =
-  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
-  "img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.github.com; " +
-  "base-uri 'self'; form-action 'self'; object-src 'none'";
+// Die Policy selbst steht in scripts/csp.js (auch für anleitung.html).
 
 const cspMeta = () => ({
   name: 'csp-meta',

@@ -5,15 +5,13 @@ wie das CMS (Werkzeug zum Bearbeiten von Webseiten-Inhalten) funktioniert, wer w
 zugreifen kann, wo was gespeichert wird und was bei Problemen geschieht. Unvermeidliche
 Fachbegriffe werden beim ersten Auftreten in einem Satz erklärt.
 
-*Als PDF: im Browser öffnen → Drucken → Als PDF speichern.*
-
 ## 1. Kurzfassung
 
 - Das CMS ist **nur Programmcode, der im Browser der bearbeitenden Person läuft**. Es gibt
   keinen eigenen Server, keine eigene Datenbank und keine eigenen Benutzerkonten oder Passwörter.
 - Die Inhalte liegen in **privaten Repositories** (Ordner mit Änderungsverlauf) der
   Organisation `phzh-zdl` bei GitHub. Wer ändern darf, bestimmt GitHub (Team-Mitgliedschaft,
-  Zwei-Faktor-Pflicht).
+  Zwei-Faktor-Pflicht, Voraussetzung, siehe Abschnitt 9).
 - Das CMS verbindet sich **ausschliesslich mit `api.github.com`**. Alles andere blockiert der
   Browser.
 - Jede Änderung ist mit Person und Zeit nachvollziehbar und lässt sich zurücknehmen.
@@ -66,8 +64,8 @@ auf dem PH-Server eingespielt hat.
 Das CMS kennt keine eigenen Rechte. Es prüft nichts selbst, sondern leitet jede Aktion an
 GitHub weiter. GitHub entscheidet mit dem Schlüssel, ob sie erlaubt ist.
 
-Die Organisation verlangt von allen Mitgliedern die **Zwei-Faktor-Anmeldung**
-(zum Passwort kommt ein zweiter Nachweis, zum Beispiel ein Code aus einer App).
+**Voraussetzung (Einstellung durch den Owner der Organisation, siehe Abschnitt 9):** Zwei-Faktor-Pflicht
+für alle Mitglieder (zum Passwort kommt ein zweiter Nachweis, zum Beispiel ein Code aus einer App).
 
 ## 4. Was wird wo gespeichert
 
@@ -102,8 +100,8 @@ zweiten Nachweis. Er wird deshalb eng begrenzt:
   Automatisierungen oder andere Bereiche.
 - **Wo gilt er:** nur für die ausgewählten Repos der Organisation, nicht für alle.
 - **Laufzeit:** empfohlen **90 Tage**. Danach funktioniert er nicht mehr, die Person erstellt
-  einen neuen. Die Organisation kann eine Höchstlaufzeit erzwingen und neue Schlüssel
-  vorab freigeben lassen.
+  einen neuen. Voraussetzung (Einstellung des Owners, siehe Abschnitt 9): Höchstlaufzeit
+  erzwingen und neue Schlüssel vorab freigeben lassen.
 - **Widerrufen:** jederzeit durch die Person selbst (github.com → Settings → Developer
   settings → Fine-grained tokens → Delete) oder durch den Owner der Organisation (unter
   Organisation → Settings → Personal access tokens). Wirkt sofort.
@@ -121,8 +119,8 @@ verwaltet, mit Ablaufdatum und Kalendererinnerung zur Erneuerung.
 
 | Risiko | Was könnte passieren | Gegenmassnahme | Restrisiko |
 |---|---|---|---|
-| **Schlüssel gestohlen** (Malware, fremder Zugriff aufs Gerät, weitergegeben) | Fremde ändern oder löschen Inhalte der freigegebenen Repos | Schlüssel eng begrenzt (nur Inhalte, nur ausgewählte Repos), läuft nach 90 Tagen ab, sofort widerrufbar; Zwei-Faktor schützt das Konto selbst; Standard ist „nur diese Sitzung" statt dauerhaft | Bis zum Widerruf kann der Schlüssel genutzt werden |
-| **Schadcode im CMS** (Cross-Site-Scripting: fremder Code wird in die Seite eingeschleust und könnte den Schlüssel lesen) | Schlüssel wird abgegriffen | Strenge Inhaltsregel des Browsers (CSP): nur eigener Code darf laufen, Verbindungen nur zu `api.github.com`, damit kann nichts an einen fremden Server gesendet werden; Inhalte werden nie als HTML angezeigt, ausser bereinigtem formatiertem Text (Bereinigungsfilter lässt nur eine feste Liste harmloser Elemente zu, keine Skripte); alle Bausteine im Code gebündelt, nichts wird von fremden Servern nachgeladen; wöchentliche automatische Prüfung der Bausteine auf bekannte Sicherheitslücken | Eine unbekannte Lücke in einem Baustein bleibt möglich; die Massnahmen verkleinern den Schaden |
+| **Schlüssel gestohlen** (Malware, fremder Zugriff aufs Gerät, weitergegeben) | Fremde ändern oder löschen Inhalte der freigegebenen Repos | Schlüssel eng begrenzt (nur Inhalte, nur ausgewählte Repos), läuft nach 90 Tagen ab, sofort widerrufbar; Zwei-Faktor (sobald als Pflicht eingestellt, Abschnitt 9) schützt das Konto selbst; Standard ist „nur diese Sitzung" statt dauerhaft | Bis zum Widerruf kann der Schlüssel genutzt werden |
+| **Schadcode im CMS** (Cross-Site-Scripting: fremder Code wird in die Seite eingeschleust und könnte den Schlüssel lesen) | Schlüssel wird abgegriffen | Strenge Inhaltsregel des Browsers (CSP): nur eigener Code darf laufen, Verbindungen nur zu `api.github.com`, damit kann nichts an einen fremden Server gesendet werden; Inhalte werden nie als HTML angezeigt, ausser bereinigtem formatiertem Text (Bereinigungsfilter lässt nur eine feste Liste harmloser Elemente zu, keine Skripte); alle Bausteine im Code gebündelt, nichts wird von fremden Servern nachgeladen; automatische Prüfung der Bausteine auf bekannte Sicherheitslücken: Dependabot öffnet wöchentlich (npm) bzw. monatlich (GitHub Actions) Änderungsvorschläge, und bei jedem Push prüft `npm audit` auf schwere Lücken (nur npm-Bausteine) | Eine unbekannte Lücke in einem Baustein bleibt möglich; die Massnahmen verkleinern den Schaden |
 | **Gleichzeitiges Bearbeiten** | Zwei Personen überschreiben sich | CMS speichert nie über fremde Änderungen hinweg: Es lädt den neuen Stand, führt Einträge zusammen, die nur eine Person geändert hat, und zeigt bei denselben Einträgen beide Fassungen zur Wahl | Eine falsche Wahl im Dialog; dann hilft der Verlauf |
 | **Versehentliches Löschen** | Eintrag oder Bild fehlt | Jede Änderung ist im Verlauf festgehalten und lässt sich wiederherstellen; nächtliche Sicherungskopie; Löschen mit Rückfrage und Hinweis auf betroffene Einträge | Bis zu ein Tag Änderungen, falls Verlauf und Original zugleich beschädigt würden |
 | **Verlauf umgeschrieben oder Hauptzweig gelöscht** (nur mit gestohlenem Schlüssel oder ausserhalb des CMS) | Frühere Stände gehen im Inhalts-Repo verloren | Das CMS selbst überschreibt nie Verlauf und löscht nie Zweige. Die nächtliche Sicherung weigert sich, einen umgeschriebenen Stand zu übernehmen, wird dann rot und alarmiert die Admins per Mail; die Kopie bleibt auf dem letzten guten Stand | **Es gibt keinen Schutz des Hauptzweigs** (diese Funktion ist bei privaten Repos im gewählten GitHub-Tarif nicht enthalten). Ein Angreifer mit gültigem Schlüssel könnte den Verlauf im Inhalts-Repo umschreiben. Der Schaden ist auf höchstens einen Tag begrenzt, weil die Sicherung davor liegt |
@@ -175,5 +173,16 @@ Der häufigste Grund ist ein abgelaufener Sicherungsschlüssel. Ein weiterer Gru
 dass in einem Inhalts-Repo der Verlauf umgeschrieben wurde. Dann weigert sich die Sicherung
 bewusst, den Stand zu überschreiben. Die Admins prüfen das Repo und stellen bei Bedarf aus der Kopie
 wieder her (`backup/README.md`).
+
+## 9. Vor dem Produktivbetrieb einzurichten
+
+Mehrere Schutzmassnahmen dieses Dokuments hängen an Einstellungen der GitHub-Organisation, die der
+Owner vornimmt. Stand: **noch nicht eingerichtet**; vor dem Produktivbetrieb abzuhaken:
+
+- [ ] Zwei-Faktor-Pflicht für alle Mitglieder der Organisation
+- [ ] Fine-grained Zugangsschlüssel erlauben, mit Höchstlaufzeit (empfohlen 90 Tage) und Freigabe durch den Owner
+- [ ] Team mit Zugriff nur auf die Inhalts-Repos (Schreibrecht), keine weiteren Repos
+- [ ] GitHub Pages des CMS-Repos auf die Quelle „GitHub Actions" stellen
+- [ ] Backup-Repo (privat, nur Admins) mit Secret `MIRROR_TOKEN`, ein erster Lauf grün (Schritte in `docs/ARCHITEKTUR.md`)
 
 Als PDF: im Browser öffnen → Drucken → Als PDF speichern.
