@@ -17,10 +17,16 @@ const cspMeta = () => ({
   ],
 });
 
+// Node 25 bringt ein eigenes globales localStorage mit, das jsdoms Storage in den
+// Tests überdeckt. Das Flag existiert erst ab Node 22.4 (ältere Versionen, z. B. die
+// 20 in der CI, lehnen es als "bad option" ab) und wird deshalb nur dort gesetzt.
+const [major, minor] = process.versions.node.split('.').map(Number);
+const hasWebstorageFlag = major > 22 || (major === 22 && minor >= 4);
+
 export default defineConfig({
   plugins: [react(), cspMeta()],
   // Relative Pfade: läuft in jedem Unterordner (GitHub Pages).
   base: './',
   server: { port: 5174 },
-  test: { environment: 'jsdom', execArgv: ['--no-experimental-webstorage'] },
+  test: { environment: 'jsdom', execArgv: hasWebstorageFlag ? ['--no-experimental-webstorage'] : [] },
 });

@@ -9,16 +9,16 @@ vi.mock('./github/client.js', async (orig) => {
   const mod = await orig();
   return { ...mod, createClient: vi.fn(() => ({ getUser: async () => ({ login: 'anna', name: 'Anna Muster' }) })) };
 });
-import { createClient, AuthError } from './github/client.js';
+import { createClient, AuthError, GitHubError } from './github/client.js';
 
-let container;
+let container, root;
 beforeEach(() => { sessionStorage.clear(); localStorage.clear(); });
-afterEach(() => { container?.remove(); container = null; });
+afterEach(() => { act(() => root?.unmount()); container?.remove(); container = root = null; });
 
 function render(ui) {
   container = document.createElement('div');
   document.body.appendChild(container);
-  const root = createRoot(container);
+  root = createRoot(container);
   act(() => root.render(ui));
   return container;
 }
@@ -52,5 +52,26 @@ describe('App', () => {
     await act(async () => {});
     expect(localStorage.getItem('cms.token')).toBeNull();
     expect(el.querySelector('input#token')).not.toBeNull();
+  });
+
+  it('keeps the stored token when GitHub is unreachable', async () => {
+    localStorage.setItem('cms.token', 'keep');
+    createClient.mockImplementationOnce(() => ({ getUser: async () => { throw new GitHubError(0, 'Keine Verbindung.'); } }));
+    const el = render(<App />);
+    await act(async () => {});
+    expect(localStorage.getItem('cms.token')).toBe('keep');
+    expect(el.querySelector('[role="alert"]').textContent).toContain('Keine Verbindung.');
+    expect([...el.querySelectorAll('button')].some((b) => b.textContent === 'Erneut versuchen')).toBe(true);
+  });
+
+  it('retry succeeds after a network error', async () => {
+    sessionStorage.setItem('cms.token', 'keep');
+    createClient.mockImplementationOnce(() => ({ getUser: async () => { throw new GitHubError(0, 'Keine Verbindung.'); } }));
+    const el = render(<App />);
+    await act(async () => {});
+    await act(async () => {
+      [...el.querySelectorAll('button')].find((b) => b.textContent === 'Erneut versuchen').click();
+    });
+    expect(el.textContent).toContain('Angemeldet als Anna Muster');
   });
 });
