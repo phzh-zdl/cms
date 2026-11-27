@@ -1,6 +1,7 @@
 // Loeschen nach Regeln: rein, ohne Mutation. Die Regeln stehen in der cms.json
 // an der Sammlung, auf die verwiesen wird (onDelete).
 import { contentPath } from './site.js';
+import { references, rowsReferencing } from './references.js';
 
 const MODES = ['reassign', 'remove', 'nullify'];
 const keyOf = (collection) => collection.key ?? 'id';
@@ -17,13 +18,9 @@ function rulesFor(config, collectionId) {
   });
 }
 
-const references = (value, id) => (Array.isArray(value) ? value.includes(id) : value === id);
-
 function affectedBy(data, config, rule, id) {
   const refKey = keyOf(byId(config, rule.refCollection));
-  return (data[rule.refCollection] ?? [])
-    .filter((row) => references(row[rule.field], id))
-    .map((row) => row[refKey]);
+  return rowsReferencing(data[rule.refCollection], [rule.field], id).map((row) => row[refKey]);
 }
 
 // Strengste Regel mit Betroffenen gewinnt: reassign > remove > nullify.

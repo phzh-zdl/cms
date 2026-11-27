@@ -73,4 +73,12 @@ describe('SiteEditor Navigation', () => {
     await act(async () => btn.click());
     expect(c.querySelector('[role="alert"]').textContent).toContain('Die Vorschau ist in diesem Browser nicht verfügbar.');
   });
+
+  it('eigenständige Einstellungen: eigene Gruppe vor Veröffentlichen', async () => {
+    const site = makeSite([{ id: 'impressum', label: 'Impressum' }]);
+    site.config = { ...site.config, settings: [{ name: 'farben', label: 'Farben', file: 'farben.json', fields: [] }], views: [] };
+    const c = await render(site);
+    expect(groups(c).map((g) => g.heading)).toEqual(['Inhalte', 'Textseiten', 'Einstellungen', 'Veröffentlichen']);
+    expect(groups(c)[2].buttons).toEqual(['Farben']);
+  });
 });

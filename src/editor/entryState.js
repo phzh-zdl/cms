@@ -3,6 +3,10 @@ import { validateEntry } from '../fields/registry.js';
 
 export const keyOf = (collection) => collection.key ?? 'id';
 
+// Anzeigetitel wie in der Listenansicht (titleField).
+export const titleOf = (collection, row) => String(row[collection.titleField] ?? '').trim();
+export const displayTitle = (collection, row) => titleOf(collection, row) || '(ohne Titel)';
+
 // Neu = die Kennung gibt es in den urspruenglich geladenen Daten nicht.
 export const isNewEntry = (collection, entry, original) =>
   !(original?.[collection.id] ?? []).some((r) => r[keyOf(collection)] === entry[keyOf(collection)]);

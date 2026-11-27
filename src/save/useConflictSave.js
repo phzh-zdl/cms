@@ -50,9 +50,10 @@ export function useConflictSave(site, client, wc) {
     const ancestor = {
       data: { ...content.data, ...base.ancestor?.data },
       pages: { ...content.pages, ...base.ancestor?.pages },
+      settings: { ...content.settings, ...base.ancestor?.settings },
     };
     const theirs = head === base.contentSha
-      ? { original: base.original, data: base.data, pages: base.pages }
+      ? { original: base.original, data: base.data, pages: base.pages, settings: base.settings }
       : await loadContentAt(client, repo, config, head);
     const result = mergeSite(config, ancestor, mine, theirs);
     let merged = result;
@@ -62,15 +63,18 @@ export function useConflictSave(site, client, wc) {
       if (!choices) return null;
       merged = applyChoices(result, choices);
     }
-    return { base: { headSha: head, contentSha: head, ...theirs }, mine: { data: merged.data, pages: merged.pages } };
+    return {
+      base: { headSha: head, contentSha: head, ...theirs, settings: theirs.settings ?? {} },
+      mine: { data: merged.data, pages: merged.pages, settings: merged.settings ?? {} },
+    };
   }
 
-  // work = { data, pages, newImages, removedFiles } (Stand beim Klick auf "Speichern").
+  // work = { data, pages, settings, newImages, removedFiles } (Stand beim Klick auf "Speichern").
   // Liefert { status: 'saved', sha, baseSha, snapshot } | { status: 'cancelled' } | { status: 'busy' };
   // andere Fehler werden weitergegeben.
-  async function save({ data, pages, newImages, removedFiles }) {
+  async function save({ data, pages, settings = {}, newImages, removedFiles }) {
     let base = wc.base;
-    let mine = { data, pages };
+    let mine = { data, pages, settings };
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const head = await client.getRef(repo, BRANCH);
       const moved = head !== base.headSha;
@@ -81,8 +85,9 @@ export function useConflictSave(site, client, wc) {
         wc.rebase(next.base, mine, next.mine);
         ({ base, mine } = next);
       }
-      const changes = collectChanges({ config, original: base.original }, mine.data, mine.pages, newImages, removedFiles);
-      const message = buildCommitMessage(summarizeChanges(config, base.data, mine.data, base.pages, mine.pages), newImages.length);
+      const changes = collectChanges({ config, original: base.original }, mine.data, mine.pages, newImages, removedFiles, mine.settings);
+      const message = buildCommitMessage(
+        summarizeChanges(config, base.data, mine.data, base.pages, mine.pages, base.settings, mine.settings), newImages.length);
       try {
         const sha = await saveChanges(client, repo, { baseSha: base.headSha, changes, message });
         return { status: 'saved', sha, baseSha: base.headSha, snapshot: { ...mine, changes, newImages, removedFiles } };

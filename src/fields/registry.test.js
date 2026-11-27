@@ -71,6 +71,26 @@ describe('Feld-Typen: validate', () => {
   });
 });
 
+describe('number: min, max, step', () => {
+  const f = { required: true, min: 5, max: 20, step: 1 };
+  it('Bereich und ganze Zahl', () => {
+    expect(v('number', 5, f)).toBeNull();
+    expect(v('number', 20, f)).toBeNull();
+    expect(v('number', 4, f)).toBe('Bitte einen Wert zwischen 5 und 20 eingeben.');
+    expect(v('number', 21, f)).toBe('Bitte einen Wert zwischen 5 und 20 eingeben.');
+    expect(v('number', 7.5, f)).toBe('Bitte eine ganze Zahl eingeben.');
+    expect(v('number', 7.5, {})).toBeNull();
+    expect(v('number', 3, { min: 5 })).toBe('Bitte einen Wert ab 5 eingeben.');
+    expect(v('number', 30, { max: 20 })).toBe('Bitte einen Wert bis 20 eingeben.');
+  });
+  it('Eingabefeld traegt min, max, step und speichert eine Zahl', () => {
+    const { Editor } = fieldTypes.number;
+    const el = Editor({ field: { name: 'n', label: 'N', ...f }, value: 7, onChange: () => {} });
+    const input = el.props.children;
+    expect(input.props).toMatchObject({ min: 5, max: 20, step: 1, type: 'number' });
+  });
+});
+
 describe('validateEntry', () => {
   it('liefert Meldungen je Feld, leer wenn gueltig', () => {
     const fields = [{ name: 't', type: 'text', required: true }, { name: 'u', type: 'url-https' }];

@@ -1,9 +1,7 @@
 import { useMemo, useState } from 'react';
 import { newEntry } from '../fields/registry.js';
 import EntryForm from './EntryForm.jsx';
-import { collectionErrors, isNewEntry, keyOf } from './entryState.js';
-
-const titleOf = (collection, row) => String(row[collection.titleField] ?? '').trim();
+import { collectionErrors, isNewEntry, keyOf, titleOf, displayTitle } from './entryState.js';
 
 function compare(collection, a, b) {
   const sb = collection.sortBy;
@@ -17,13 +15,20 @@ function compare(collection, a, b) {
 
 // Liste mit Suche + Formular. data = Arbeitsstand aller Sammlungen,
 // original = urspruenglich geladene Daten (fuer "neu"), onChange(rows) ersetzt diese Sammlung.
-export default function CollectionView({ collection, data, original, collections, images, onChange, planFor, onDelete }) {
+// initialEntry = Kennung eines Eintrags, der gleich geoeffnet wird (Sprung aus einer anderen Ansicht);
+// onOpenEntry(collectionId, Kennung) springt zu einem Eintrag (fuer "Verwendet von").
+export default function CollectionView({
+  collection, data, original, collections, images, onChange, planFor, onDelete, initialEntry, onOpenEntry,
+}) {
   const rows = data[collection.id] ?? [];
   const [query, setQuery] = useState('');
   // Offener Eintrag: Position in rows; isNew wird beim Oeffnen festgelegt,
   // damit die Kennung nicht mitten im Tippen schreibgeschuetzt wird. Aendert sich die
   // Basis (nach dem Speichern), gilt wieder der Vergleich mit der neuen Basis.
-  const [open, setOpen] = useState(null);
+  const [open, setOpen] = useState(() => {
+    const index = initialEntry === undefined ? -1 : rows.findIndex((r) => r[keyOf(collection)] === initialEntry);
+    return index === -1 ? null : { index, isNew: isNewEntry(collection, rows[index], original), original };
+  });
   const openEntry = (index, isNew) => setOpen({ index, isNew, original });
 
   const errors = useMemo(
@@ -39,6 +44,7 @@ export default function CollectionView({ collection, data, original, collections
         onChange={(next) => onChange(rows.map((r, i) => (i === open.index ? next : r)))}
         onBack={() => setOpen(null)}
         planFor={planFor}
+        onOpenEntry={onOpenEntry}
         onDelete={onDelete && ((id, opts) => { setOpen(null); onDelete(id, opts); })} />
     );
   }
@@ -67,7 +73,7 @@ export default function CollectionView({ collection, data, original, collections
         {shown.map(({ row, index }) => (
           <li key={index}>
             <button type="button" onClick={() => openEntry(index, isNewEntry(collection, row, original))}>
-              <span className="entry-title">{titleOf(collection, row) || '(ohne Titel)'}</span>
+              <span className="entry-title">{displayTitle(collection, row)}</span>
               {errors[row[keyOf(collection)]] && <span className="entry-error">Fehler</span>}
             </button>
           </li>

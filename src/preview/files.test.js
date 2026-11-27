@@ -71,6 +71,15 @@ describe('buildPreviewFiles', () => {
     expect(files.get('content/resources.json').type).toBe('application/json');
   });
 
+  it('Einstellungen: geaenderte ersetzt die Datei aus main, unberuehrte bleibt wie gespeichert', async () => {
+    const cfg = { ...config, settings: [{ name: 'extra', file: 'extra.json', fields: [] }] };
+    const changed = await buildPreviewFiles(makeClient(), 'o/r', cfg, work({ settings: { extra: { x: 2 } } }));
+    expect(JSON.parse(dec(changed.get('content/extra.json').bytes))).toEqual({ x: 2 });
+    clearShellCache();
+    const untouched = await buildPreviewFiles(makeClient(), 'o/r', cfg, work({ settings: {} }));
+    expect(dec(untouched.get('content/extra.json').bytes)).toBe('{"x":1}');
+  });
+
   it('Basis wie Export: nicht konfigurierte Datei und unreferenziertes Bild aus main erscheinen', async () => {
     const files = await buildPreviewFiles(makeClient(), 'o/r', config, work());
     expect(dec(files.get('content/extra.json').bytes)).toBe('{"x":1}');

@@ -198,3 +198,19 @@ describe('mergeSite: je Datei zuerst als Ganzes', () => {
     expect(keysUsable(undefined, 'id')).toBe(true);
   });
 });
+
+describe('mergeSite: Einstellungsobjekte', () => {
+  const cfg = { collections: [], pages: [], settings: [{ name: 'carousel', label: 'Karussell', file: 'carousel.json', fields: [] }] };
+  const S = (count) => ({ interval_seconds: 7, count, fill: true });
+  it('nur ich geaendert (Datei fehlte): meine Fassung, kein Konflikt', () => {
+    const r = mergeSite(cfg, { settings: {} }, { settings: { carousel: S(5) } }, { settings: {} });
+    expect(r.conflicts).toEqual([]);
+    expect(r.settings.carousel).toEqual(S(5));
+  });
+  it('beide unterschiedlich geaendert: Konflikt, applyChoices waehlt', () => {
+    const r = mergeSite(cfg, { settings: { carousel: S(9) } }, { settings: { carousel: S(5) } }, { settings: { carousel: S(12) } });
+    expect(r.conflicts).toEqual([{ kind: 'settings', settingsId: 'carousel', mine: S(5), theirs: S(12) }]);
+    expect(applyChoices(r, ['mine']).settings.carousel).toEqual(S(5));
+    expect(applyChoices(r, ['theirs']).settings.carousel).toEqual(S(12));
+  });
+});

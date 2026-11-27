@@ -119,3 +119,19 @@ describe('pruneAncestor', () => {
     expect(pruneAncestor(config, null, merged, merged)).toBeNull();
   });
 });
+
+describe('rebaseState / pruneAncestor: Einstellungen', () => {
+  const cfg = { collections: [], pages: [], settings: [{ name: 'carousel', file: 'carousel.json', fields: [] }] };
+  it('waehrend des Speicherns geaenderte Einstellung: neuere Fassung bleibt, Basis = Fassung vom Klick', () => {
+    const from = { data: {}, pages: {}, settings: { carousel: { count: 5 } } };
+    const cur = { data: {}, pages: {}, settings: { carousel: { count: 6 } } };
+    const merged = { data: {}, pages: {}, settings: { carousel: { count: 5 } } };
+    const r = rebaseState(cfg, from, cur, merged);
+    expect(r.settings.carousel).toEqual({ count: 6 });
+    expect(r.ancestor.settings.carousel).toEqual({ count: 5 });
+    const other = { data: {}, pages: {}, settings: { carousel: { count: 7 } } };
+    expect(pruneAncestor(cfg, r.ancestor, other, cur)).toEqual({ data: {}, pages: {}, settings: { carousel: { count: 5 } } });
+    expect(pruneAncestor(cfg, r.ancestor, merged, cur)).toBeNull();
+    expect(pruneAncestor(cfg, r.ancestor, cur, cur)).toBeNull();
+  });
+});

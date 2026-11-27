@@ -17,8 +17,9 @@ function unchanged(value, originalText) {
 }
 
 // site: { config, original: { [Repo-Pfad]: Text } } (die Basis, gegen die verglichen wird).
+// settings: { [Name]: Objekt } - undefined = unberuehrt (eine fehlende Datei bleibt dann fehlend).
 // Liefert { path, text } | { path, bytes } | { path, delete: true } - nur echte Aenderungen.
-export function collectChanges(site, data, pages, newImages = [], removedFiles = []) {
+export function collectChanges(site, data, pages, newImages = [], removedFiles = [], settings = {}) {
   const { config, original } = site;
   const out = [];
   const textFile = (file, value) => {
@@ -28,6 +29,7 @@ export function collectChanges(site, data, pages, newImages = [], removedFiles =
   };
   for (const c of config.collections) textFile(c.file, data[c.id]);
   for (const p of config.pages) textFile(p.file, pages?.[p.id]);
+  for (const st of config.settings ?? []) textFile(st.file, settings?.[st.name]);
   for (const img of newImages) out.push({ path: img.path, bytes: img.bytes });
   const written = new Set(out.map((c) => c.path));
   for (const path of new Set(removedFiles)) {

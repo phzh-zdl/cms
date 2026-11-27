@@ -40,12 +40,12 @@ export function validateEntry(fields, entry, ctx) {
   return errors;
 }
 
-// Neuer Eintrag mit Leerwerten; uuid-ids sofort, slug-ids entstehen aus dem Namen.
+// Neuer Eintrag mit default bzw. Leerwerten; uuid-ids sofort, slug-ids entstehen aus dem Namen.
 export function newEntry(collection) {
   const entry = {};
   for (const f of collection.fields) {
-    const empty = fieldTypes[f.type].empty;
-    entry[f.name] = Array.isArray(empty) ? [] : empty;
+    const empty = f.default !== undefined ? structuredClone(f.default) : fieldTypes[f.type].empty;
+    entry[f.name] = Array.isArray(empty) ? [...empty] : empty;
   }
   const key = collection.key ?? 'id';
   entry[key] = collection.idField?.type === 'uuid' ? crypto.randomUUID() : '';

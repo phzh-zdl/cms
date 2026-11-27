@@ -42,8 +42,10 @@ function rowsFor(conflict, version, config, data) {
       { label: 'Text', value: plainText(version.html) || EMPTY, raw: version.html },
     ];
   }
-  const collection = config.collections.find((c) => c.id === conflict.collectionId);
-  return collection.fields.map((f) => ({ label: f.label ?? f.name, value: display(f, version[f.name], config, data), raw: version[f.name] }));
+  const owner = conflict.kind === 'settings'
+    ? (config.settings ?? []).find((s) => s.name === conflict.settingsId)
+    : config.collections.find((c) => c.id === conflict.collectionId);
+  return owner.fields.map((f) => ({ label: f.label ?? f.name, value: display(f, version[f.name], config, data), raw: version[f.name] }));
 }
 
 function describe(conflict, config) {
@@ -51,6 +53,10 @@ function describe(conflict, config) {
   if (conflict.kind === 'page') {
     const page = config.pages.find((p) => p.id === conflict.pageId);
     return { title: String(entry.title ?? '').trim() || page?.label || conflict.pageId, where: 'Textseiten' };
+  }
+  if (conflict.kind === 'settings') {
+    const def = (config.settings ?? []).find((s) => s.name === conflict.settingsId);
+    return { title: def?.label ?? conflict.settingsId, where: 'Einstellungen' };
   }
   const collection = config.collections.find((c) => c.id === conflict.collectionId);
   return { title: String(entry[collection.titleField] ?? '').trim() || String(conflict.id), where: collection.label };

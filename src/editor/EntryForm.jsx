@@ -2,9 +2,12 @@ import { useRef, useState } from 'react';
 import { fieldTypes, validateEntry, deriveSlug } from '../fields/registry.js';
 import { keyOf, makeCtx } from './entryState.js';
 import DeleteDialog from './DeleteDialog.jsx';
+import UsageList from './UsageList.jsx';
 
 // Bearbeitet einen Eintrag direkt im Arbeitsstand (onChange bei jeder Eingabe).
-export default function EntryForm({ collection, entry, data, collections, isNew, images, onChange, onBack, planFor, onDelete }) {
+export default function EntryForm({
+  collection, entry, data, collections, isNew, images, onChange, onBack, planFor, onDelete, onOpenEntry,
+}) {
   const ctx = makeCtx({ data, collections, collection, entry, isNew, images });
   const errors = validateEntry(collection.fields, entry, ctx);
   const key = keyOf(collection);
@@ -48,6 +51,10 @@ export default function EntryForm({ collection, entry, data, collections, isNew,
         <div className="form-end">
           <button type="button" className="btn-danger" ref={deleteRef} onClick={() => setPlan(planFor(entry[key]))}>Löschen</button>
         </div>
+      )}
+      {/* Neu angelegte Eintraege haben noch keine Verwendung. */}
+      {!isNew && (
+        <UsageList data={data} collections={collections} collectionId={collection.id} id={entry[key]} onOpen={onOpenEntry} />
       )}
       {plan && (
         <DeleteDialog plan={plan} options={options} onCancel={cancelDelete}

@@ -26,6 +26,7 @@ export function useDraftAutosave(repo, wc, enabled) {
       ancestor: w.base.ancestor ?? null,
       data: w.data,
       pages: w.pages,
+      settings: w.settings,
       removedFiles: w.removedFiles,
       newImages: imagesToDraft(w.newImages),
     });

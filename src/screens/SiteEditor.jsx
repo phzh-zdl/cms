@@ -6,6 +6,9 @@ import { planDelete, applyDelete } from '../content/deleteRules.js';
 import { collectionErrors } from '../editor/entryState.js';
 import ConflictDialog from '../editor/ConflictDialog.jsx';
 import PageEditor from '../editor/PageEditor.jsx';
+import SelectionView from '../editor/SelectionView.jsx';
+import SettingsForm from '../editor/SettingsForm.jsx';
+import { settingsErrors, standaloneSettings } from '../content/settingsValue.js';
 import { AuthError, GitHubError } from '../github/client.js';
 import { useSiteWorkingCopy } from '../save/useSiteWorkingCopy.js';
 import { useDraftAutosave } from '../save/useDraftAutosave.js';
@@ -35,7 +38,7 @@ function errorText(e, drafted) {
 export default function SiteEditor({ site, client, onBack }) {
   const { config } = site;
   const wc = useSiteWorkingCopy(site);
-  const { base, data, setData, pages, removedFiles, newImages, dirty } = wc;
+  const { base, data, setData, pages, settings, removedFiles, newImages, dirty } = wc;
   const [pendingDraft, setPendingDraft] = useState(() => loadDraft(site.repo));
   const autosave = useDraftAutosave(site.repo, wc, !pendingDraft);
   const conflictSave = useConflictSave(site, client, wc);
@@ -46,7 +49,7 @@ export default function SiteEditor({ site, client, onBack }) {
   const [previewRun, setPreviewRun] = useState(0); // jeder Klick auf "Vorschau" startet eine neue Vorbereitung
   // Neuester Arbeitsstand und ob der Editor noch offen ist - fuer das Ende eines Speichervorgangs.
   const latest = useRef();
-  latest.current = { data, pages, removedFiles, newImages, dirty };
+  latest.current = { data, pages, settings, removedFiles, newImages, dirty };
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [current, setCurrent] = useState(() =>
@@ -78,15 +81,19 @@ export default function SiteEditor({ site, client, onBack }) {
 
   const invalidCollections = config.collections.filter((c) =>
     Object.keys(collectionErrors(c, data[c.id] ?? [], { data, collections: config.collections, original: base.data })).length > 0);
-  const blocked = blockRequested && invalidCollections.length > 0 ? invalidCollections.map((c) => c.label) : null;
+  // Einstellungen nur pruefen, wenn sie geschrieben werden (vorhanden oder geaendert), nicht die Standardwerte.
+  const invalidSettings = (config.settings ?? []).filter((st) =>
+    settings[st.name] !== undefined && Object.keys(settingsErrors(st, settings[st.name])).length > 0);
+  const invalid = [...invalidCollections, ...invalidSettings];
+  const blocked = blockRequested && invalid.length > 0 ? invalid.map((c) => c.label) : null;
 
   async function handleSave() {
     setResult(null);
-    if (invalidCollections.length > 0) { setBlockRequested(true); return; }
+    if (invalid.length > 0) { setBlockRequested(true); return; }
     setBlockRequested(false);
     if (!dirty) { setResult({ kind: 'info', text: 'Es gibt keine Änderungen zum Speichern.' }); return; }
     const drafted = autosave.flush(); // Entwurf zuerst sichern - bleibt bei jedem Fehler erhalten
-    const work = { data, pages, newImages, removedFiles };
+    const work = { data, pages, settings, newImages, removedFiles };
     setSaving(true);
     let outcome;
     try {
@@ -116,7 +123,7 @@ export default function SiteEditor({ site, client, onBack }) {
     wc.markSaved(sha, snapshot);
     const l = latest.current;
     const now = wc.peek(); // sofort aktuell, auch wenn nach dem Zusammenfuehren noch nicht neu gezeichnet
-    const untouched = now.data === snapshot.data && now.pages === snapshot.pages
+    const untouched = now.data === snapshot.data && now.pages === snapshot.pages && now.settings === snapshot.settings
       && l.removedFiles === snapshot.removedFiles && l.newImages === snapshot.newImages;
     // Wurde waehrend des Speicherns weiter bearbeitet, sichert die Autosave-Logik den neuen Stand.
     if (untouched) clearDraft(site.repo);
@@ -124,9 +131,20 @@ export default function SiteEditor({ site, client, onBack }) {
     setSaving(false);
   }
 
-  const item = current && (current.kind === 'collection'
-    ? config.collections.find((c) => c.id === current.id)
-    : config.pages.find((p) => p.id === current.id));
+  const views = config.views ?? [];
+  const settingsDef = (name) => (config.settings ?? []).find((st) => st.name === name);
+  const item = current && {
+    collection: () => config.collections.find((c) => c.id === current.id),
+    page: () => config.pages.find((p) => p.id === current.id),
+    view: () => views.find((v) => v.name === current.id),
+    settings: () => settingsDef(current.id),
+  }[current.kind]?.();
+  // Sprung zu einem Eintrag (Auswahl-Ansicht, "Verwendet von"); jedes Mal frisch geoeffnet.
+  const openEntry = (collectionId, entryKey) =>
+    setCurrent((cur) => ({ kind: 'collection', id: collectionId, entry: entryKey, nonce: (cur?.nonce ?? 0) + 1 }));
+  const setRows = (collectionId) => (rows) => setData((d) => ({ ...d, [collectionId]: rows }));
+  const setSetting = (name) => (value) => wc.setSettings((all) => ({ ...all, [name]: value }));
+  const ownSettings = standaloneSettings(config);
 
   const navButton = (kind, entry) => {
     const active = current?.kind === kind && current.id === entry.id;
@@ -164,13 +182,25 @@ export default function SiteEditor({ site, client, onBack }) {
           {config.collections.length > 0 && (
             <div className="nav-group">
               <h2 className="nav-heading" id="nav-inhalte">Inhalte</h2>
-              <ul aria-labelledby="nav-inhalte">{config.collections.map((c) => navButton('collection', c))}</ul>
+              <ul aria-labelledby="nav-inhalte">
+                {/* Auswahl-Ansichten direkt nach ihrer Sammlung */}
+                {config.collections.flatMap((c) => [
+                  navButton('collection', c),
+                  ...views.filter((v) => v.collection === c.id).map((v) => navButton('view', { id: v.name, label: v.label })),
+                ])}
+              </ul>
             </div>
           )}
           {config.pages.length > 0 && (
             <div className="nav-group">
               <h2 className="nav-heading" id="nav-textseiten">Textseiten</h2>
               <ul aria-labelledby="nav-textseiten">{config.pages.map((p) => navButton('page', p))}</ul>
+            </div>
+          )}
+          {ownSettings.length > 0 && (
+            <div className="nav-group">
+              <h2 className="nav-heading" id="nav-einstellungen">Einstellungen</h2>
+              <ul aria-labelledby="nav-einstellungen">{ownSettings.map((st) => navButton('settings', { id: st.name, label: st.label }))}</ul>
             </div>
           )}
           <div className="nav-group nav-group-publish">
@@ -200,15 +230,29 @@ export default function SiteEditor({ site, client, onBack }) {
         {conflictSave.notice && <p role="status" className="note">{conflictSave.notice}</p>}
         {conflictSave.dialog && <ConflictDialog {...conflictSave.dialog} />}
         {current?.kind === 'collection' && item && (
-          <CollectionView key={item.id} collection={item} data={data} original={base.data}
+          <CollectionView key={`${item.id}:${current.nonce ?? 0}`} collection={item} data={data} original={base.data}
             collections={config.collections} images={images}
+            initialEntry={current.entry} onOpenEntry={openEntry}
             planFor={(id) => planDelete(data, config, item.id, id)}
             onDelete={(id, opts) => {
               const res = applyDelete(data, config, item.id, id, opts);
               setData(res.data);
               wc.setRemovedFiles((files) => [...new Set([...files, ...res.removedFiles])]);
             }}
-            onChange={(rows) => setData((d) => ({ ...d, [item.id]: rows }))} />
+            onChange={setRows(item.id)} />
+        )}
+        {current?.kind === 'view' && item && (
+          <SelectionView key={item.name} view={item} collection={config.collections.find((c) => c.id === item.collection)}
+            rows={data[item.collection] ?? []} onChange={setRows(item.collection)} onOpenEntry={openEntry}
+            settingsDef={item.settings ? settingsDef(item.settings) : null}
+            settingsStored={item.settings ? settings[item.settings] : undefined}
+            onSettingsChange={item.settings ? setSetting(item.settings) : undefined} />
+        )}
+        {current?.kind === 'settings' && item && (
+          <div className="page-view" key={item.name}>
+            <h1>{item.label}</h1>
+            <SettingsForm def={item} stored={settings[item.name]} onChange={setSetting(item.name)} />
+          </div>
         )}
         {current?.kind === 'preview' && (
           <PreviewPanel key={previewRun} site={site} client={client} onBusyChange={setPreviewBusy}

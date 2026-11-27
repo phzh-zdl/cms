@@ -71,14 +71,16 @@ export function mergePage(base, mine, theirs) {
   return r.conflict ? { conflict: { mine, theirs } } : { merged: r.value };
 }
 
-// Ganze Seite: alle Sammlungen und Textseiten. Liefert { data, pages, conflicts, keys }.
+// Ganze Seite: alle Sammlungen, Textseiten und Einstellungen. Liefert { data, pages, settings, conflicts, keys }.
 // Je Datei zuerst als Ganzes: hat nur eine Seite sie geaendert, gilt deren Fassung unveraendert
 // (auch Reihenfolge und Eintraege ohne Kennung). Nur wenn beide sie geaendert haben, wird je
 // Eintrag zusammengefuehrt - das setzt eindeutige Kennungen voraus (sonst UnmergeableError).
 // conflicts: { kind: 'collection', collectionId, id, mine, theirs } | { kind: 'page', pageId, mine, theirs }
+//   | { kind: 'settings', settingsId, mine, theirs } (Einstellung = ein Eintrag wie eine Textseite)
 export function mergeSite(config, base, mine, theirs) {
   const data = {};
   const pages = {};
+  const settings = {};
   const conflicts = [];
   const keys = {};
   for (const c of config.collections) {
@@ -104,18 +106,29 @@ export function mergeSite(config, base, mine, theirs) {
       pages[p.id] = r.merged;
     }
   }
-  return { data, pages, conflicts, keys };
+  for (const s of config.settings ?? []) {
+    const r = mergePage(base.settings?.[s.name], mine.settings?.[s.name], theirs.settings?.[s.name]);
+    if (r.conflict) {
+      settings[s.name] = r.conflict.theirs;
+      conflicts.push({ kind: 'settings', settingsId: s.name, ...r.conflict });
+    } else if (r.merged !== undefined) {
+      settings[s.name] = r.merged;
+    }
+  }
+  return { data, pages, settings, conflicts, keys };
 }
 
-// choices[i] = 'mine' | 'theirs' fuer conflicts[i]. Liefert { data, pages }.
+// choices[i] = 'mine' | 'theirs' fuer conflicts[i]. Liefert { data, pages, settings }.
 export function applyChoices(result, choices) {
   const data = { ...result.data };
   const pages = { ...result.pages };
+  const settings = { ...result.settings };
   result.conflicts.forEach((conflict, i) => {
     const value = choices[i] === 'mine' ? conflict.mine : conflict.theirs;
-    if (conflict.kind === 'page') {
-      if (value === undefined) delete pages[conflict.pageId];
-      else pages[conflict.pageId] = value;
+    if (conflict.kind === 'page' || conflict.kind === 'settings') {
+      const [target, id] = conflict.kind === 'page' ? [pages, conflict.pageId] : [settings, conflict.settingsId];
+      if (value === undefined) delete target[id];
+      else target[id] = value;
       return;
     }
     const key = result.keys[conflict.collectionId];
@@ -126,5 +139,5 @@ export function applyChoices(result, choices) {
     }
     data[conflict.collectionId] = rows;
   });
-  return { data, pages };
+  return { data, pages, settings };
 }

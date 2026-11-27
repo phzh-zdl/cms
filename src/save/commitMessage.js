@@ -20,8 +20,8 @@ export function buildCommitMessage(summary, imageCount = 0) {
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-// Vergleicht Basis und Arbeitsstand je Eintrag (ueber die Kennung) und je Textseite.
-export function summarizeChanges(config, baseData, data, basePages = {}, pages = {}) {
+// Vergleicht Basis und Arbeitsstand je Eintrag (ueber die Kennung), je Textseite und je Einstellung.
+export function summarizeChanges(config, baseData, data, basePages = {}, pages = {}, baseSettings = {}, settings = {}) {
   const out = [];
   for (const c of config.collections) {
     const key = keyOf(c);
@@ -45,6 +45,11 @@ export function summarizeChanges(config, baseData, data, basePages = {}, pages =
   for (const p of config.pages) {
     if (pages?.[p.id] !== undefined && !same(basePages?.[p.id], pages[p.id])) {
       out.push({ label: 'Seite', verb: 'geändert', title: p.label });
+    }
+  }
+  for (const s of config.settings ?? []) {
+    if (settings?.[s.name] !== undefined && !same(baseSettings?.[s.name], settings[s.name])) {
+      out.push({ label: 'Einstellungen', verb: 'geändert', title: s.label });
     }
   }
   return out;

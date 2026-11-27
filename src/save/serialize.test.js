@@ -76,3 +76,14 @@ describe('collectChanges', () => {
     ]);
   });
 });
+
+describe('collectChanges: Einstellungen', () => {
+  const cfg = { ...config, settings: [{ name: 'carousel', file: 'carousel.json', fields: [] }] };
+  const st = { config: cfg, original: site.original };
+  it('unberuehrt (undefined): keine Aenderung; gesetzt: neue Datei', () => {
+    expect(collectChanges(st, data, pages, [], [], {})).toEqual([]);
+    const value = { interval_seconds: 7, count: 9, fill: false };
+    expect(collectChanges(st, data, pages, [], [], { carousel: value }))
+      .toEqual([{ path: 'public/content/carousel.json', text: serializeJson(value) }]);
+  });
+});

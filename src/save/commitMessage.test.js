@@ -66,3 +66,12 @@ describe('summarizeChanges', () => {
     ]);
   });
 });
+
+describe('summarizeChanges: Einstellungen', () => {
+  it('geaenderte Einstellung wird genannt', () => {
+    const cfg = { collections: [], pages: [], settings: [{ name: 'carousel', label: 'Karussell', file: 'carousel.json', fields: [] }] };
+    expect(summarizeChanges(cfg, {}, {}, {}, {}, {}, { carousel: { count: 5 } }))
+      .toEqual([{ label: 'Einstellungen', verb: 'geändert', title: 'Karussell' }]);
+    expect(summarizeChanges(cfg, {}, {}, {}, {}, { carousel: { count: 5 } }, { carousel: { count: 5 } })).toEqual([]);
+  });
+});

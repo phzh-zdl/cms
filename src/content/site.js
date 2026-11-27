@@ -50,14 +50,19 @@ export async function listSites(client, org = DEFAULT_ORG) {
 }
 
 function readers(client, repo, sha, original) {
-  async function readText(path) {
+  // optional: fehlende Datei = undefined statt Fehler (Einstellungen entstehen beim ersten Speichern).
+  async function readText(path, { optional = false } = {}) {
     const file = await client.getFileText(repo, path, sha);
-    if (!file) throw new Error(`Datei fehlt: ${path}`);
+    if (!file) {
+      if (optional) return undefined;
+      throw new Error(`Datei fehlt: ${path}`);
+    }
     original[path] = file.text;
     return file.text;
   }
-  async function readJson(path) {
-    const text = await readText(path);
+  async function readJson(path, opts) {
+    const text = await readText(path, opts);
+    if (text === undefined) return undefined;
     try {
       return JSON.parse(text);
     } catch {
@@ -67,22 +72,28 @@ function readers(client, repo, sha, original) {
   return { readText, readJson };
 }
 
-// Inhalte (Sammlungen + Textseiten) einer bestimmten Version; die cms.json bleibt die gegebene.
+// Inhalte (Sammlungen, Textseiten, Einstellungen) einer bestimmten Version; die cms.json bleibt die gegebene.
+// Eine fehlende Einstellungsdatei fehlt auch in settings (der Editor zeigt dann die Standardwerte).
 export async function loadContentAt(client, repo, config, sha) {
   const original = {};
   const { readJson } = readers(client, repo, sha, original);
   const data = {};
   const pages = {};
+  const settings = {};
   await Promise.all([
     ...config.collections.map(async (c) => { data[c.id] = await readJson(contentPath(config, c.file)); }),
     ...config.pages.map(async (p) => { pages[p.id] = await readJson(contentPath(config, p.file)); }),
+    ...(config.settings ?? []).map(async (s) => {
+      const value = await readJson(contentPath(config, s.file), { optional: true });
+      if (value !== undefined) settings[s.name] = value;
+    }),
   ]);
-  return { original, data, pages };
+  return { original, data, pages, settings };
 }
 
 export async function loadSite(client, repo) {
   const headSha = await client.getRef(repo, BRANCH);
   const config = parseConfigText(await readers(client, repo, headSha, {}).readText('cms.json'));
-  const { original, data, pages } = await loadContentAt(client, repo, config, headSha);
-  return { repo, config, headSha, original, data, pages };
+  const { original, data, pages, settings } = await loadContentAt(client, repo, config, headSha);
+  return { repo, config, headSha, original, data, pages, settings };
 }

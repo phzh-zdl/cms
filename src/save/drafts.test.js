@@ -9,6 +9,7 @@ const state = {
   ancestor: { data: { resources: [{ id: 'r1', title: 'A' }] }, pages: {} },
   data: { resources: [{ id: 'r1', title: 'Ä' }] },
   pages: { impressum: { body: 'x' } },
+  settings: { carousel: { count: 5 } },
   removedFiles: ['img/old.png'],
   newImages: [{ path: 'img/a.png', base64: 'AQID' }],
 };
@@ -41,7 +42,7 @@ describe('drafts', () => {
 
   it('nach dem Speichern: Entwurf gleich Gespeichertem -> weg', () => {
     saveDraft('o/r', state);
-    settleDraftAfterSave('o/r', { data: state.data, pages: state.pages, removedFiles: state.removedFiles, newImages: imagesFromDraft(state.newImages) }, 'abc', 'new');
+    settleDraftAfterSave('o/r', { data: state.data, pages: state.pages, settings: state.settings, removedFiles: state.removedFiles, newImages: imagesFromDraft(state.newImages) }, 'abc', 'new');
     expect(loadDraft('o/r')).toBeNull();
   });
   it('nach dem Speichern: neuerer Entwurf bleibt, Basis = neue Version', () => {
@@ -53,5 +54,13 @@ describe('drafts', () => {
     saveDraft('o/r', { ...state, baseSha: 'other' });
     settleDraftAfterSave('o/r', { data: {}, pages: {}, removedFiles: [], newImages: [] }, 'abc', 'new');
     expect(loadDraft('o/r').baseSha).toBe('other');
+  });
+});
+
+describe('drafts: Einstellungen', () => {
+  it('alter Entwurf ohne settings: leeres Objekt', () => {
+    const { settings, ...old } = state; // eslint-disable-line no-unused-vars
+    saveDraft('o/r', old);
+    expect(loadDraft('o/r').settings).toEqual({});
   });
 });

@@ -33,7 +33,7 @@ export const clearShellCache = () => shellCache.clear();
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-// work = { data, pages, newImages: [{ path, bytes }], removedFiles: [Repo-Pfade], dirty }
+// work = { data, pages, settings, newImages: [{ path, bytes }], removedFiles: [Repo-Pfade], dirty }
 // Basis = ALLE Dateien unter contentRoot im aktuellen main (wie der Export); darueber der Arbeitsstand:
 // konfigurierte Dateien (gleiche Serialisierung wie beim Speichern), neue Bilder, entfernte Dateien fallen weg.
 // -> Map<Pfad, { bytes, type }>; Pfade wie im fertigen Paket (content/... statt contentRoot/...).
@@ -48,6 +48,10 @@ export async function buildPreviewFiles(client, repo, config, work, { onProgress
   }
   for (const p of config.pages) {
     if (work.pages?.[p.id] !== undefined) texts.set(contentPath(config, p.file), serializeJson(work.pages[p.id]));
+  }
+  // Unberuehrte Einstellung (undefined): gespeicherte Datei aus main bzw. keine (Katalog nimmt Standardwerte).
+  for (const st of config.settings ?? []) {
+    if (work.settings?.[st.name] !== undefined) texts.set(contentPath(config, st.file), serializeJson(work.settings[st.name]));
   }
   const fresh = new Map((work.newImages ?? []).map((i) => [i.path, i.bytes]));
   const removed = new Set(work.removedFiles ?? []);

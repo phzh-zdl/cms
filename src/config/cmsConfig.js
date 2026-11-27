@@ -14,8 +14,7 @@ const needString = (v, what) => {
   return v;
 };
 
-function parseField(f, colId) {
-  const where = `Sammlung "${colId}"`;
+function parseField(f, colId, where = `Sammlung "${colId}"`) {
   if (!f || typeof f !== 'object') fail(`${where}: ungueltiges Feld.`);
   const name = needString(f.name, `${where}: Feld-name`);
   if (!FIELD_TYPES.includes(f.type)) {
@@ -88,5 +87,76 @@ export function parseCmsConfig(json) {
     toolbar: p.toolbar ?? 'basic',
   }));
 
-  return { name, export: { shell: exp.shell, zipName: exp.zipName }, contentRoot, collections, pages };
+  const settings = parseSettings(json.settings);
+  const views = parseViews(json.views, byId, settings);
+
+  return { name, export: { shell: exp.shell, zipName: exp.zipName }, contentRoot, collections, pages, settings, views };
+}
+
+const needList = (v, what) => {
+  if (v === undefined) return [];
+  if (!Array.isArray(v)) fail(`${what} muss eine Liste sein.`);
+  return v;
+};
+const unique = (what) => {
+  const seen = new Set();
+  return (name) => {
+    if (seen.has(name)) fail(`${what} "${name}" ist doppelt vorhanden.`);
+    seen.add(name);
+  };
+};
+
+// Datei relativ zu contentRoot, ohne ".." und ohne fuehrenden Schraegstrich.
+function relativeFile(file, where) {
+  if (file.startsWith('/') || file.includes('\\') || /^[a-z]+:/i.test(file)) {
+    fail(`${where}: file muss ein relativer Pfad sein.`);
+  }
+  if (file.split('/').includes('..')) fail(`${where}: file darf kein ".." enthalten.`);
+  return file;
+}
+
+// Einstellungsdatei = ein einzelnes Objekt mit festen Feldern (keine Verweise, Bilder, Kennungen).
+const SETTINGS_TYPES = ['text', 'textarea', 'color', 'url-https', 'boolean', 'number'];
+
+function parseSettings(list) {
+  const check = unique('Einstellung');
+  return needList(list, 'settings').map((s) => {
+    const name = needString(s?.name, 'Einstellungs-name');
+    check(name);
+    const where = `Einstellung "${name}"`;
+    const file = relativeFile(needString(s.file, `${where}: file`), where);
+    if (!Array.isArray(s.fields) || s.fields.length === 0) fail(`${where}: fields fehlt oder ist leer.`);
+    const fieldNames = unique(`${where}: Feld`);
+    const fields = s.fields.map((f) => {
+      const field = parseField(f, name, where);
+      fieldNames(field.name);
+      if (!SETTINGS_TYPES.includes(field.type)) {
+        fail(`${where}, Feld "${field.name}": Typ "${field.type}" ist in Einstellungen nicht möglich.`);
+      }
+      return field;
+    });
+    return { ...s, name, label: s.label ?? name, file, fields };
+  });
+}
+
+const VIEW_TYPES = ['selection'];
+
+function parseViews(list, collectionsById, settings) {
+  const check = unique('Ansicht');
+  return needList(list, 'views').map((v) => {
+    const name = needString(v?.name, 'Ansichts-name');
+    check(name);
+    const where = `Ansicht "${name}"`;
+    if (!VIEW_TYPES.includes(v.type)) fail(`${where}: unbekannter Typ "${v.type}".`);
+    const collection = collectionsById[needString(v.collection, `${where}: collection`)];
+    if (!collection) fail(`${where}: collection verweist auf unbekannte Sammlung "${v.collection}".`);
+    const fieldName = needString(v.field, `${where}: field`);
+    const field = collection.fields.find((f) => f.name === fieldName);
+    if (!field) fail(`${where}: field verweist auf unbekanntes Feld "${fieldName}".`);
+    if (field.type !== 'boolean') fail(`${where}: Feld "${fieldName}" muss vom Typ boolean sein.`);
+    if (v.settings !== undefined && !settings.some((s) => s.name === v.settings)) {
+      fail(`${where}: settings verweist auf unbekannte Einstellung "${v.settings}".`);
+    }
+    return { ...v, name, label: v.label ?? name };
+  });
 }

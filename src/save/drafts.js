@@ -1,5 +1,5 @@
 // Entwuerfe im localStorage: cms.draft.<repo>.
-// state = { savedAt, baseSha, ancestor, data, pages, removedFiles, newImages: [{ path, base64 }] }
+// state = { savedAt, baseSha, ancestor, data, pages, settings, removedFiles, newImages: [{ path, base64 }] }
 // ancestor: siehe useSiteWorkingCopy (Vergleichsbasis fuer waehrend des Speicherns bearbeitete Dateien).
 const keyFor = (repo) => `cms.draft.${repo}`;
 
@@ -25,6 +25,7 @@ export function loadDraft(repo) {
       ancestor: d.ancestor && typeof d.ancestor === 'object' ? d.ancestor : null,
       data: d.data,
       pages: d.pages ?? {},
+      settings: d.settings && typeof d.settings === 'object' ? d.settings : {},
       removedFiles: Array.isArray(d.removedFiles) ? d.removedFiles : [],
       newImages: Array.isArray(d.newImages) ? d.newImages : [],
     };
@@ -60,7 +61,7 @@ export const imagesFromDraft = (images) => images.map(({ path, base64 }) => ({ p
 export function settleDraftAfterSave(repo, snapshot, oldSha, newSha) {
   const draft = loadDraft(repo);
   if (!draft || draft.baseSha !== oldSha) return;
-  const content = (s) => JSON.stringify([s.data, s.pages, s.removedFiles, s.newImages]);
+  const content = (s) => JSON.stringify([s.data, s.pages, s.settings ?? {}, s.removedFiles, s.newImages]);
   const saved = { ...snapshot, newImages: imagesToDraft(snapshot.newImages) };
   if (content(draft) === content(saved)) clearDraft(repo);
   else saveDraft(repo, { ...draft, baseSha: newSha });

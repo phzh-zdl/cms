@@ -63,9 +63,12 @@ Screenshots liegen in `docs/bilder/` und werden nach `dist/bilder/` kopiert.
 
 1. `loadSite` (`src/content/site.js`) liest den Stand von `main`: `getRef` liefert den Kopf, daraus
    wird `cms.json` gelesen und mit `parseCmsConfig` geprüft.
-2. Alle in `cms.json` genannten Dateien (Sammlungen, Textseiten) werden unter
-   `<contentRoot>/` gelesen und als `original` (Rohtext), `data` (Sammlungen) und `pages`
-   (Textseiten) gehalten. `headSha` ist der Stand, auf dem die Arbeit aufbaut.
+2. Alle in `cms.json` genannten Dateien (Sammlungen, Textseiten, Einstellungen) werden unter
+   `<contentRoot>/` gelesen und als `original` (Rohtext), `data` (Sammlungen), `pages`
+   (Textseiten) und `settings` (Einstellungen) gehalten. `headSha` ist der Stand, auf dem die
+   Arbeit aufbaut. Eine **fehlende Einstellungsdatei ist kein Fehler**: sie fehlt dann in
+   `settings`, der Editor zeigt die `default`-Werte, und erst eine Änderung legt sie beim
+   Speichern an (unberührt = nicht „ungespeichert").
 3. Ist ein Entwurf (`cms.draft.<repo>` in `localStorage`) vorhanden, fragt das CMS, ob er
    wiederhergestellt werden soll. Ist `baseSha` des Entwurfs älter als der Kopf, folgt der
    Hinweis „Diese Seite wurde seit dem Öffnen von … geändert.".
@@ -97,8 +100,8 @@ Zeilenumbruch und unveränderter Feldreihenfolge (`serialize.js`), damit Diffs m
 3. Haben beide die Datei geändert, wird **pro Eintrag** über die Kennung (`key`, Standard `id`)
    zusammengeführt: Einträge, die nur eine Seite geändert hat, werden übernommen, nur
    Einträge, die beide geändert haben, sind Konflikte. Fehlen eindeutige Kennungen, wirft
-   `mergeSite` einen `UnmergeableError` und es wird nichts still überschrieben. Textseiten sind je ein
-   Eintrag.
+   `mergeSite` einen `UnmergeableError` und es wird nichts still überschrieben. Textseiten und
+   Einstellungen sind je ein Eintrag (Konflikt `kind: 'page'` bzw. `kind: 'settings'`).
 4. `ConflictDialog` zeigt je Konflikt beide Fassungen; die Auswahl wird mit `applyChoices` eingesetzt
    und das Speichern wiederholt (mit dem neuen Kopf als Basis).
 5. **Vergleichsbasis pro Eintrag (`rebaseState`):** Wird während des Speicherns weiter
@@ -132,7 +135,7 @@ auch ungespeichert**. Kein Server, nichts wird veröffentlicht.
    Speicher pro Build-Stand zwischengespeichert). Als Basis dienen **alle Dateien unter `contentRoot/`
    im aktuellen `main`** (wie beim Export, also auch nicht konfigurierte Dateien und nicht
    referenzierte Bilder; das deckt auch den Entwurf mit abweichendem `headSha` ab). Darüber liegt der
-   Arbeitsstand: konfigurierte Sammlungen und Textseiten mit `serializeJson` (dieselbe Funktion wie
+   Arbeitsstand: konfigurierte Sammlungen, Textseiten und geänderte Einstellungen mit `serializeJson` (dieselbe Funktion wie
    beim Speichern), neu hochgeladene Bilder aus `newImages`; in `removedFiles` Genanntes fällt weg.
    In jede HTML-Datei kommt ein Hinweisband.
 3. `fillPreviewCache` (`src/preview/cache.js`) leert den Cache `zdl-vorschau` und legt die Dateien
@@ -169,7 +172,9 @@ Eine `cms.json` im Wurzelordner des Inhalts-Repos beschreibt Inhalte und Masken.
   "export": { "shell": "build", "zipName": "oer-katalog" },  // Pflicht: Zweig mit fertiger Seite, ZIP-Präfix
   "contentRoot": "public/content",       // Pflicht: Ordner der Inhaltsdateien im Repo
   "collections": [ /* Listen von Einträgen, mindestens eine */ ],
-  "pages": [ /* Textseiten, optional */ ]
+  "pages": [ /* Textseiten, optional */ ],
+  "settings": [ /* Einstellungsdateien (je ein Objekt), optional */ ],
+  "views": [ /* zusätzliche Ansichten, optional */ ]
 }
 ```
 
@@ -190,7 +195,8 @@ Eine `cms.json` im Wurzelordner des Inhalts-Repos beschreibt Inhalte und Masken.
 ### Feld (`fields[]`)
 
 Gemeinsame Schlüssel: `name` (Pflicht, Name in der JSON-Datei), `type` (Pflicht), `label`
-(Standard: `name`), `required` (Pflichtfeld). Typen:
+(Standard: `name`), `required` (Pflichtfeld), `default` (Wert für neue Einträge bzw. für eine
+fehlende Einstellungsdatei). Typen:
 
 | Typ | Wert in der Datei | Zusätzliche Optionen und Regeln |
 |---|---|---|
@@ -201,7 +207,7 @@ Gemeinsame Schlüssel: `name` (Pflicht, Name in der JSON-Datei), `type` (Pflicht
 | `color` | `#rrggbb` | Farbwähler plus Textfeld |
 | `url-https` | Text, muss mit `https://` beginnen | |
 | `boolean` | `true` / `false` | |
-| `number` | Zahl oder `null` | |
+| `number` | JSON-Zahl oder `null` (nie Text) | `min`, `max`, `step`; `step: 1` (oder `integer: true`) verlangt eine ganze Zahl („Bitte eine ganze Zahl eingeben."); ausserhalb des Bereichs „Bitte einen Wert zwischen {min} und {max} eingeben." |
 | `reference` | Kennung | **`to`** (Pflicht): Ziel-Sammlung; Auswahl, Prüfung auf Existenz |
 | `reference-multi` | Array von Kennungen | **`to`** (Pflicht); Mehrfachauswahl |
 | `image` | Dateiname | **`dir`**: Ordner unter `contentRoot`; **`colorFrom`**: Name eines `reference`-Feldes, dessen Ziel eine `color` hat (Hintergrundfarbe für „Ganzes Bild zeigen") |
@@ -212,6 +218,68 @@ Gemeinsame Schlüssel: `name` (Pflicht, Name in der JSON-Datei), `type` (Pflicht
 Eine Datei, ein Eintrag mit den Feldern `title` und `html`. Schlüssel: `id` (Pflicht), `file`
 (Pflicht, relativ zu `contentRoot`), `label` (Standard `id`), `toolbar` (`basic` als
 Standard, oder `full`). Konflikte bei Textseiten: die ganze Seite ist ein Eintrag.
+
+### Einstellungen (`settings[]`)
+
+Eine Datei = **ein** JSON-Objekt mit festen Feldern (zum Beispiel Tempo und Anzahl eines
+Karussells). Schlüssel: `name` (Pflicht, eindeutig), `label` (Standard `name`), `file`
+(Pflicht, relativ zu `contentRoot`, ohne `..` und ohne führenden `/`), `fields` (Pflicht,
+nicht leer; Typen `text`, `textarea`, `color`, `url-https`, `boolean`, `number` — keine
+Verweise, Bilder oder Kennungen).
+
+- Geschrieben werden immer **alle** konfigurierten Felder in Konfigurationsreihenfolge, ein
+  `boolean` immer als `true`/`false`; andere Schlüssel in der Datei fallen beim nächsten
+  Speichern weg (`src/content/settingsValue.js`).
+- Einstellungen laufen durch denselben Arbeitsstand wie Textseiten: ungespeichert-Markierung,
+  Entwurf (`settings` im Entwurf), Speichern, Zusammenführen und Konfliktdialog
+  („„Karussell“ in Einstellungen …"), Vorschau (geänderte Datei ersetzt die aus `main`) und
+  Export (gespeicherte Datei liegt unter `contentRoot`). Fehler sperren das Speichern wie bei
+  Sammlungen; geprüft wird nur, was geschrieben würde (nicht die unberührten Standardwerte).
+- Seitenleiste: Einstellungen, die keine Ansicht zeigt, stehen in der Gruppe **Einstellungen**;
+  eine von einer Ansicht (`views[].settings`) gezeigte erscheint **nur** dort.
+
+```json
+{ "name": "carousel", "label": "Karussell", "file": "carousel.json",
+  "fields": [
+    { "name": "interval_seconds", "type": "number", "label": "Wechsel alle … Sekunden", "required": true, "min": 5, "max": 20, "step": 1, "default": 7 },
+    { "name": "fill", "type": "boolean", "label": "Mit weiteren Ressourcen auffüllen (täglich wechselnd)", "default": true }
+  ] }
+```
+
+### Ansichten (`views[]`)
+
+Derzeit ein Typ: **`selection`** — Übersicht über ein Ja/Nein-Feld einer Sammlung (zum Beispiel
+„im Karussell angepinnt"). Schlüssel:
+
+| Schlüssel | Pflicht | Bedeutung |
+|---|---|---|
+| `type` | ja | `"selection"` |
+| `name` | ja | Eindeutige Kennung der Ansicht |
+| `label` | nein | Navigationspunkt und Überschrift (Standard `name`) |
+| `collection` | ja | Sammlung; die Ansicht steht in der Navigation direkt nach ihr |
+| `field` | ja | Feld der Sammlung vom Typ `boolean` |
+| `settings` | nein | `name` einer Einstellung; ihr Formular steht oben in der Ansicht |
+| `hint` | nein | Hilfetext unter der Überschrift |
+| `addLabel` | nein | Beschriftung des Suchfelds (Standard „Eintrag hinzufügen") |
+| `clearConfirm` | nein | Frage im Dialog „Alle abwählen", `{n}` = Anzahl (Standard „Alle {n} Einträge abwählen?") |
+
+Die Ansicht (`src/editor/SelectionView.jsx`) zeigt „Ausgewählt (N)" (Feld `=== true`, in
+Sammlungsreihenfolge, je Zeile Titel wie in der Liste, „Entfernen", „Öffnen"), „Alle abwählen"
+mit Bestätigung und eine Suche über die nicht ausgewählten Einträge (höchstens 10 Treffer,
+Trefferzahl per `aria-live`). Sie ändert nur den Arbeitsstand der Sammlung — gespeichert wird
+über die Speicherleiste wie beim Formular. `parseCmsConfig` prüft Sammlung, Feld (muss
+`boolean` sein), `settings`-Verweis und eindeutige Namen.
+
+### „Verwendet von"
+
+Zeigt eine andere Sammlung per `reference`/`reference-multi` auf diese, steht unter dem
+Eintragsformular je verweisender Sammlung ein Abschnitt „Verwendet von N <Label>" mit den
+verweisenden Einträgen und „Öffnen" (`src/editor/UsageList.jsx`). Grundlage ist der
+**Arbeitsstand** (ungespeicherte Zuordnungen zählen). Bei neuen Einträgen entfällt der
+Abschnitt. Gezählt wird mit `src/content/references.js` — dieselbe Funktion nutzen die
+Löschregeln (`planDelete`), die Zahlen stimmen also überein. „Öffnen" (auch in der
+Auswahl-Ansicht) springt über `openEntry` in `SiteEditor.jsx` zum Eintrag in seiner Sammlung;
+der Arbeitsstand bleibt erhalten.
 
 ### Löschregeln (`onDelete[]`)
 

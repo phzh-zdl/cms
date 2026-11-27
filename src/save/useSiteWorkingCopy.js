@@ -16,13 +16,16 @@ export function useSiteWorkingCopy(site) {
     original: site.original ?? {},
     data: site.data,
     pages: site.pages ?? {},
+    settings: site.settings ?? {},
     ancestor: null,
   }));
   const [data, setDataState] = useState(() => structuredClone(site.data));
   const [pages, setPagesState] = useState(() => structuredClone(site.pages ?? {}));
+  // Einstellungen: { [Name]: Objekt }; fehlt ein Name, ist die Datei unberuehrt (Standardwerte im Editor).
+  const [settings, setSettingsState] = useState(() => structuredClone(site.settings ?? {}));
   // Neuester Arbeitsstand, sofort aktuell (auch bevor React neu zeichnet) - fuer rebase/peek.
   const work = useRef(null);
-  if (work.current === null) work.current = { data, pages };
+  if (work.current === null) work.current = { data, pages, settings };
   const setData = (v) => {
     work.current = { ...work.current, data: typeof v === 'function' ? v(work.current.data) : v };
     setDataState(work.current.data);
@@ -31,14 +34,18 @@ export function useSiteWorkingCopy(site) {
     work.current = { ...work.current, pages: typeof v === 'function' ? v(work.current.pages) : v };
     setPagesState(work.current.pages);
   };
+  const setSettings = (v) => {
+    work.current = { ...work.current, settings: typeof v === 'function' ? v(work.current.settings) : v };
+    setSettingsState(work.current.settings);
+  };
   // Volle Repo-Pfade, die beim Speichern geloescht werden (Task 7).
   const [removedFiles, setRemovedFiles] = useState([]);
   // { path, bytes } - neue Bilder (Task 10).
   const [newImages, setNewImages] = useState([]);
 
   const changes = useMemo(
-    () => collectChanges({ config: site.config, original: base.original }, data, pages, newImages, removedFiles),
-    [site.config, base.original, data, pages, newImages, removedFiles],
+    () => collectChanges({ config: site.config, original: base.original }, data, pages, newImages, removedFiles, settings),
+    [site.config, base.original, data, pages, newImages, removedFiles, settings],
   );
 
   // snapshot = der Stand, der tatsaechlich gespeichert wurde (waehrend des Speicherns
@@ -52,7 +59,7 @@ export function useSiteWorkingCopy(site) {
         else if (c.text !== undefined) original[c.path] = c.text;
       }
       return {
-        headSha, contentSha: headSha, original, data: snapshot.data, pages: snapshot.pages,
+        headSha, contentSha: headSha, original, data: snapshot.data, pages: snapshot.pages, settings: snapshot.settings ?? {},
         ancestor: pruneAncestor(site.config, b.ancestor, snapshot, now),
       };
     });
@@ -65,6 +72,7 @@ export function useSiteWorkingCopy(site) {
   function restore(draft) {
     setData({ ...structuredClone(site.data), ...draft.data });
     setPages({ ...structuredClone(site.pages ?? {}), ...draft.pages });
+    setSettings({ ...structuredClone(site.settings ?? {}), ...draft.settings });
     setRemovedFiles([...new Set(draft.removedFiles)]);
     setNewImages(imagesFromDraft(draft.newImages));
     if (draft.baseSha) setBase((b) => ({ ...b, headSha: draft.baseSha, ancestor: draft.ancestor ?? null }));
@@ -78,12 +86,13 @@ export function useSiteWorkingCopy(site) {
     setBase({ ...nextBase, ancestor: next.ancestor });
     setData(next.data);
     setPages(next.pages);
+    setSettings(next.settings ?? {});
   }
 
   const peek = () => work.current;
 
   return {
-    base, data, setData, pages, setPages, removedFiles, setRemovedFiles, newImages, setNewImages,
+    base, data, setData, pages, setPages, settings, setSettings, removedFiles, setRemovedFiles, newImages, setNewImages,
     changes, dirty: changes.length > 0, markSaved, restore, rebase, peek,
   };
 }

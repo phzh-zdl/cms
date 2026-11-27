@@ -113,3 +113,22 @@ describe('loadContentAt', () => {
     for (const call of client.getFileText.mock.calls) expect(call[2]).toBe('old1');
   });
 });
+
+describe('Einstellungsdateien (settings)', () => {
+  const withSettings = { ...cms, settings: [{ name: 'carousel', label: 'Karussell', file: 'carousel.json', fields: [{ name: 'count', type: 'number' }] }] };
+  const base = {
+    'o/r:public/content/resources.json': resourcesText,
+    'o/r:public/content/pages/impressum.json': pageText,
+  };
+  it('fehlende Datei ist kein Fehler: settings-Wert undefined, nicht in original', async () => {
+    const content = await loadContentAt(fakeClient(base), 'o/r', parseCmsConfig(withSettings), 's1');
+    expect(content.settings).toEqual({});
+    expect(Object.keys(content.original)).not.toContain('public/content/carousel.json');
+  });
+  it('vorhandene Datei wird geladen', async () => {
+    const text = JSON.stringify({ count: 5 });
+    const content = await loadContentAt(fakeClient({ ...base, 'o/r:public/content/carousel.json': text }), 'o/r', parseCmsConfig(withSettings), 's1');
+    expect(content.settings.carousel).toEqual({ count: 5 });
+    expect(content.original['public/content/carousel.json']).toBe(text);
+  });
+});

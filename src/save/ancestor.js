@@ -5,7 +5,7 @@
 // die Aenderungen der anderen nicht. Fuer genau diese Eintraege bleibt die Fassung vom Klick die
 // Vergleichsbasis des naechsten Speicherns (ancestor) - so fragt es nach, statt still zu
 // ueberschreiben. Alle anderen Eintraege bekommen den zusammengefuehrten Stand als Basis.
-// ancestor = null | { data: { [Sammlung]: Zeilen }, pages: { [Seite]: Seite } }
+// ancestor = null | { data: { [Sammlung]: Zeilen }, pages: { [Seite]: Seite }, settings?: { [Name]: Objekt } }
 import { mergeCollections, applyChoices, keysUsable, sameValue } from './merge.js';
 
 const byKey = (rows, key) => new Map((rows ?? []).map((r) => [r[key], r]));
@@ -35,7 +35,7 @@ function entryAncestor(f, k, m, key) {
   return rows;
 }
 
-// from/cur/merged: { data, pages }. Liefert { data, pages, ancestor }.
+// from/cur/merged: { data, pages, settings }. Liefert { data, pages, settings?, ancestor }.
 export function rebaseState(config, from, cur, merged) {
   const ancestor = { data: {}, pages: {} };
   let touched = false;
@@ -58,18 +58,29 @@ export function rebaseState(config, from, cur, merged) {
       }
     }
   }
-  let pages = merged.pages;
-  if (cur.pages !== from.pages) {
-    pages = { ...merged.pages };
-    for (const p of config.pages) {
-      const [f, k] = [from.pages?.[p.id], cur.pages?.[p.id]];
+  // Textseiten und Einstellungen: je ein Eintrag; nach dem Klick geaendert -> neuere Fassung, Basis = vom Klick.
+  const single = {};
+  for (const { part, ids } of singleParts(config)) {
+    if (part === 'settings') ancestor.settings = {};
+    single[part] = merged[part];
+    if (cur[part] === from[part]) continue;
+    single[part] = { ...merged[part] };
+    for (const id of ids) {
+      const [f, k] = [from[part]?.[id], cur[part]?.[id]];
       if (f === k || sameValue(f, k)) continue;
       touched = true;
-      ancestor.pages[p.id] = f;
-      pages[p.id] = k;
+      ancestor[part][id] = f;
+      single[part][id] = k;
     }
   }
-  return { data, pages, ancestor: touched ? ancestor : null };
+  return { data, pages: single.pages, settings: single.settings ?? merged.settings, ancestor: touched ? ancestor : null };
+}
+
+// Teile mit Einzelobjekten: pages immer, settings nur, wenn die Seite welche hat.
+function singleParts(config) {
+  const parts = [{ part: 'pages', ids: config.pages.map((p) => p.id) }];
+  if ((config.settings ?? []).length > 0) parts.push({ part: 'settings', ids: config.settings.map((s) => s.name) });
+  return parts;
 }
 
 // Nach dem Speichern (saved = gespeicherter Stand, work = aktueller Arbeitsstand): Basis nur noch
@@ -102,13 +113,16 @@ export function pruneAncestor(config, ancestor, saved, work) {
     out.data[c.id] = rows;
     any = true;
   }
-  for (const p of config.pages) {
-    if (!ancestor.pages || !(p.id in ancestor.pages)) continue;
-    const a = ancestor.pages[p.id];
-    const s = saved.pages?.[p.id];
-    if (sameValue(work.pages?.[p.id], s) || sameValue(a, s)) continue;
-    out.pages[p.id] = a;
-    any = true;
+  for (const { part, ids } of singleParts(config)) {
+    if (part === 'settings') out.settings = {};
+    for (const id of ids) {
+      if (!ancestor[part] || !(id in ancestor[part])) continue;
+      const a = ancestor[part][id];
+      const s = saved[part]?.[id];
+      if (sameValue(work[part]?.[id], s) || sameValue(a, s)) continue;
+      out[part][id] = a;
+      any = true;
+    }
   }
   return any ? out : null;
 }

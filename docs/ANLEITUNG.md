@@ -24,6 +24,8 @@ mit Abschnitt 5 los.
 12. [Exportieren und ZIP ans Webcenter schicken](#export)
 13. [Verlauf ansehen](#verlauf)
 14. [Vorschau ansehen](#vorschau)
+15. [Karussell einstellen](#karussell)
+16. [Sehen, wo etwas verwendet wird](#verwendet)
 
 <a id="konto"></a>
 
@@ -353,6 +355,45 @@ Vorschau-Daten auf deinem Gerät gelöscht.
 
 Erscheint „Die Vorschau ist in diesem Browser nicht verfügbar", exportiere stattdessen das
 ZIP (Abschnitt 12) und sieh es dir an.
+
+<a id="karussell"></a>
+
+## 15. Karussell einstellen
+
+Das Karussell „Im Fokus" oben im Katalog zeigt zuerst die Ressourcen, die du ausgewählt hast,
+in der Reihenfolge des Katalogs. Ist „Auffüllen" eingeschaltet, ergänzt der Katalog täglich
+wechselnd weitere Ressourcen bis zur eingestellten Anzahl. Die Reihenfolge stellst du nicht ein.
+
+1. Klicke links unter **Inhalte** auf **Karussell (Im Fokus)** (direkt unter „Ressourcen").
+2. Oben unter **Einstellungen**:
+   - **Wechsel alle … Sekunden:** eine ganze Zahl von 5 bis 20.
+   - **Anzahl Karten:** eine ganze Zahl von 3 bis 24.
+   - **Mit weiteren Ressourcen auffüllen (täglich wechselnd):** Häkchen an oder aus.
+
+   Ein Wert ausserhalb des Bereichs zeigt eine Meldung unter dem Feld; speichern geht erst,
+   wenn sie behoben ist.
+3. Unter **Ausgewählt** stehen die angehakten Ressourcen. **Entfernen** nimmt eine heraus
+   (sie bleibt im Katalog), **Öffnen** springt zur Ressource. **Alle abwählen** fragt zuerst nach.
+4. Unter **Hinzufügen** tippst du einen Teil des Titels ins Feld **Ressource hinzufügen** und
+   klickst beim Treffer auf **Hinzufügen**.
+5. Speichern (Abschnitt 9).
+
+*Du müsstest jetzt* unten „Ungespeicherte Änderungen" sehen, nach dem Speichern „Gespeichert.".
+In der Vorschau (Abschnitt 14) siehst du das Karussell mit den neuen Werten.
+
+<a id="verwendet"></a>
+
+## 16. Sehen, wo etwas verwendet wird
+
+Bei Fachbereichen, Zielstufen, Formaten und Lizenzen zeigt das CMS, welche Ressourcen den
+Eintrag verwenden.
+
+1. Wähle links zum Beispiel **Fachbereiche** und öffne einen Eintrag.
+2. Unter dem Formular steht **Verwendet von N Ressourcen** mit der Liste der Ressourcen.
+   Ungespeicherte Änderungen zählen schon mit.
+3. **Öffnen** springt zur Ressource. Deine ungespeicherten Änderungen bleiben erhalten.
+
+*Du müsstest jetzt* die Ressource im Formular sehen; links ist „Ressourcen" markiert.
 
 ## Wenn etwas nicht klappt
 
