@@ -27,6 +27,17 @@ function fake(...responses) {
 const toB64 = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s)))
 
 describe('github client', () => {
+  it('umgeht den Browser-Cache bei jeder Anfrage (GET und PATCH)', async () => {
+    const f = fake(res(200, { object: { sha: 'abc' } }), res(200, {}))
+    const c = createClient('t', f)
+    await c.getRef('o/r', 'main')
+    await c.updateRef('o/r', 'main', 'def')
+    expect(f.calls[0].opts.method).toBe('GET')
+    expect(f.calls[0].opts.cache).toBe('no-store')
+    expect(f.calls[1].opts.method).toBe('PATCH')
+    expect(f.calls[1].opts.cache).toBe('no-store')
+  })
+
   it('sendet Bearer-Header und API-Version', async () => {
     const f = fake(res(200, { login: 'a', name: 'A' }))
     const user = await createClient('tok', f).getUser()

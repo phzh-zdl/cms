@@ -34,7 +34,7 @@ das Repo mit der Fehlermeldung).
 |---|---|
 | `src/main.jsx`, `src/App.jsx` | Einstieg; Phasen Prüfen/Anmelden/Seitenwahl, gewählte Seite im URL-Hash `#/<owner>/<repo>` |
 | `src/auth/` | Zugangsschlüssel in `sessionStorage` (Standard) oder `localStorage` („merken") |
-| `src/github/client.js` | Schlanker GitHub-API-Client (`fetch`), Fehlerklassen `GitHubError`, `AuthError`, `ConflictError` |
+| `src/github/client.js` | Schlanker GitHub-API-Client (`fetch`, immer `cache: 'no-store'`, weil GitHub Antworten sonst bis zu 60 s im Browser-Cache liegen), Fehlerklassen `GitHubError`, `AuthError`, `ConflictError` |
 | `src/config/cmsConfig.js` | Liest und prüft `cms.json`, deutsche Fehlermeldungen |
 | `src/content/` | `site.js` (Seiten finden, laden), `siteHash.js` (Hash-Routing), `deleteRules.js` (Löschregeln `planDelete`/`applyDelete`) |
 | `src/fields/` | Feld-Typen: je Typ ein Modul (`Editor`, `validate`, `empty`), `registry.js` (Register, `validateEntry`, `newEntry`), `rules.js` (reine Prüfregeln) |

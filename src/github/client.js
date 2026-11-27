@@ -45,7 +45,9 @@ export function createClient(token, fetchImpl = (...a) => fetch(...a)) {
   }
 
   async function raw(url, method = 'GET', body) {
-    const opts = { method, headers: body === undefined ? headers : { ...headers, 'Content-Type': 'application/json' } }
+    // GitHub antwortet mit "Cache-Control: max-age=60"; ohne no-store lieferte der Browser bis zu
+    // einer Minute einen alten Stand (z. B. main vor dem eigenen Speichern -> veralteter Export).
+    const opts = { method, cache: 'no-store', headers: body === undefined ? headers : { ...headers, 'Content-Type': 'application/json' } }
     if (body !== undefined) opts.body = JSON.stringify(body)
     let res
     try {
