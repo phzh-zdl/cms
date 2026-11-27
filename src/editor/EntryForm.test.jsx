@@ -78,14 +78,46 @@ describe('EntryForm', () => {
     await act(async () => fs.querySelector('input[type=checkbox]').click());
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ format_ids: ['kunst'] }));
   });
-  it('bestehender Eintrag: Slug schreibgeschuetzt', async () => {
+  it('bestehender Eintrag: Slug als Text mit Hinweis, kein Eingabefeld', async () => {
     const c = await render(<EntryForm {...base} collection={categories} entry={data.categories[0]} isNew={false} />);
-    expect(c.querySelector('input#field-id').readOnly).toBe(true);
+    expect(c.querySelector('input[id="field-id"]')).toBeNull();
+    const shown = c.querySelector('[id="field-id"]');
+    expect(shown.textContent).toBe('IDnatur');
+    expect(c.querySelector(`#${shown.getAttribute('aria-describedby')}`).textContent)
+      .toBe('Wurde beim Anlegen festgelegt und kann nicht mehr geändert werden, weil andere Einträge darauf verweisen.');
+  });
+  it('UUID: immer als Text mit Hinweis, auch bei neuen Eintraegen', async () => {
+    for (const isNew of [true, false]) {
+      const c = await render(<EntryForm {...base} collection={{ ...resources, fields: [{ name: 'id', type: 'uuid', label: 'ID' }, ...resources.fields] }}
+        entry={{ id: 'u-123', title: 'x', description: '', category_id: 'natur', format_ids: ['natur'] }} isNew={isNew} />);
+      expect(c.querySelector('input[id="field-id"]')).toBeNull();
+      expect(c.querySelector('[id="field-id"]').textContent).toContain('u-123');
+      expect(c.textContent).toContain('Wird automatisch vergeben und kann nicht geändert werden.');
+    }
+  });
+  it('neuer Eintrag: Slug wird aus Name vorgeschlagen, bis er von Hand geaendert wird', async () => {
+    let entry = { id: '', label: '', color: '', sort_order: null };
+    const onChange = vi.fn((next) => { entry = next; });
+    const props = { ...base, onChange, collection: categories, isNew: true };
+    const c = await render(<EntryForm {...props} entry={entry} />);
+    const rerender = () => act(async () => root.render(<EntryForm {...props} entry={entry} />));
+    const id = () => c.querySelector('input[id="field-id"]');
+    expect(c.querySelector(`[id="${id().getAttribute("aria-describedby").split(" ")[0]}"]`).textContent)
+      .toBe('Wird aus der Bezeichnung vorgeschlagen und kann vor dem ersten Speichern angepasst werden. Danach ist sie fest.');
+    await type(c.querySelector('input#field-label'), 'Natur');
+    await rerender();
+    expect(id().value).toBe('natur');
+    await type(id(), 'nat');
+    await rerender();
+    await type(c.querySelector('input#field-label'), 'Natur und Technik');
+    await rerender();
+    expect(id().value).toBe('nat');
+    expect(entry).toMatchObject({ id: 'nat', label: 'Natur und Technik' });
   });
   it('neuer Eintrag: Slug wird aus Name abgeleitet und ist editierbar', async () => {
     const onChange = vi.fn();
     const c = await render(<EntryForm {...base} onChange={onChange} collection={categories} entry={{ id: '', label: '', color: '', sort_order: null }} isNew />);
-    expect(c.querySelector('input#field-id').readOnly).toBe(false);
+    expect(c.querySelector('input[id="field-id"]').readOnly).toBe(false);
     await type(c.querySelector('input#field-label'), 'Natur, Mensch & Gesellschaft');
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'natur-mensch-gesellschaft', label: 'Natur, Mensch & Gesellschaft' }));
   });

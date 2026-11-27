@@ -202,8 +202,8 @@ fehlende Einstellungsdatei). Typen:
 |---|---|---|
 | `text` | Text | `maxLength` |
 | `textarea` | Text, mehrzeilig | `maxLength` (mit Zeichenzähler) |
-| `slug` | Text `^[a-z0-9_-]{1,32}$` | Kennung, in der Sammlung eindeutig; nur bei neuen Einträgen änderbar |
-| `uuid` | UUID-Text | schreibgeschützt, wird beim Anlegen erzeugt (`idField.type: "uuid"`) |
+| `slug` | Text `^[a-z0-9_-]{1,32}$` | Kennung, in der Sammlung eindeutig; bei neuen Einträgen ein Eingabefeld, das aus dem `titleField` vorgeschlagen wird, bis man es von Hand ändert; danach nur noch als Text angezeigt (`FixedField.jsx`) |
+| `uuid` | UUID-Text | wird beim Anlegen erzeugt (`idField.type: "uuid"`) und nur als Text angezeigt (kein gesperrtes Eingabefeld) |
 | `color` | `#rrggbb` | Farbwähler plus Textfeld |
 | `url-https` | Text, muss mit `https://` beginnen | |
 | `boolean` | `true` / `false` | |

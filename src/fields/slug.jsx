@@ -1,4 +1,5 @@
-import FieldFrame, { aria } from './FieldFrame.jsx';
+import FieldFrame, { aria, fieldId } from './FieldFrame.jsx';
+import FixedField from './FixedField.jsx';
 import { SLUG_RE, requiredCheck } from './rules.js';
 
 export function validate(value, field, ctx) {
@@ -11,12 +12,19 @@ export function validate(value, field, ctx) {
   return null;
 }
 
-// Nach dem ersten Speichern unveraenderlich: dann nur noch angezeigt.
+export const HINT_NEW = 'Wird aus der Bezeichnung vorgeschlagen und kann vor dem ersten Speichern angepasst werden. Danach ist sie fest.';
+export const HINT_FIXED = 'Wurde beim Anlegen festgelegt und kann nicht mehr geändert werden, weil andere Einträge darauf verweisen.';
+
+// Neu: Eingabefeld, das EntryForm aus dem Titelfeld vorschlaegt, bis es von Hand geaendert wird.
+// Nach dem ersten Speichern unveraenderlich: dann nur noch als Text angezeigt.
 export function Editor({ field, value, onChange, ctx, error }) {
+  if (!ctx.isNew) return <FixedField field={field} value={value} hint={HINT_FIXED} error={error} />;
+  const hintId = `${fieldId(field)}-hint`;
   return (
     <FieldFrame field={field} error={error}>
-      <input type="text" {...aria(field, error)} value={value ?? ''} readOnly={!ctx.isNew}
+      <input type="text" {...aria(field, error, hintId)} value={value ?? ''} autoComplete="off"
         onChange={(e) => onChange(e.target.value)} />
+      <p className="hint" id={hintId}>{HINT_NEW}</p>
     </FieldFrame>
   );
 }

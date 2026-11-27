@@ -229,6 +229,9 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .field-error { margin: var(--s-2) 0 0; color: var(--danger); font-weight: 700; max-width: 75ch; }
 .field-count { margin: var(--s-1) 0 0; font-size: var(--fs-sm); color: var(--ink-3); text-align: right; }
 .hint { margin: 0; font-size: var(--fs-sm); color: var(--ink-3); }
+.field-fixed { margin: 0 0 var(--s-1); }
+.field-value { overflow-wrap: anywhere; }
+.field input + .hint { margin-top: var(--s-1); }
 
 /* Checkbox mit Label daneben: die ganze Zeile ist klickbar (das Label reicht unter die Box). */
 .field-check { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--s-3); }

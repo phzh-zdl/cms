@@ -92,7 +92,8 @@ describe('SiteEditor speichern', () => {
     await click(button(c, 'Speichern'));
     expect(c.querySelector('[role="status"]').textContent).toContain('Gespeichert.');
     expect(c.textContent).toContain('Alle Änderungen gespeichert.');
-    expect(c.querySelector('#field-id').readOnly).toBe(true);
+    expect(c.querySelector('input#field-id')).toBeNull();
+    expect(c.querySelector('#field-id').textContent).toContain('sport');
     const commit = client.calls.find((x) => x[0] === 'createCommit');
     expect(commit).toEqual(['createCommit', 'o/r', 'Fachbereich „Sport“ hinzugefügt', 'tree1', 'head0']);
     expect(client.calls.find((x) => x[0] === 'updateRef')).toEqual(['updateRef', 'o/r', 'main', 'commit1']);
@@ -100,7 +101,8 @@ describe('SiteEditor speichern', () => {
     // zurueck zur Liste und wieder oeffnen: weiterhin schreibgeschuetzt
     await click(button(c, 'Zurück zur Liste'));
     await click([...c.querySelectorAll('.entry-list button')].find((b) => b.textContent.includes('Sport')));
-    expect(c.querySelector('#field-id').readOnly).toBe(true);
+    expect(c.querySelector('input#field-id')).toBeNull();
+    expect(c.querySelector('#field-id').textContent).toContain('sport');
     // naechstes Speichern baut auf dem neuen Stand auf
     await type(c.querySelector('#field-label'), 'Sport und Bewegung');
     await click(button(c, 'Speichern'));

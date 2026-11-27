@@ -1,4 +1,4 @@
-import FieldFrame, { aria } from './FieldFrame.jsx';
+import FixedField from './FixedField.jsx';
 import { requiredCheck } from './rules.js';
 
 export const validate = (value, field) => {
@@ -6,12 +6,10 @@ export const validate = (value, field) => {
   return r === undefined ? null : r;
 };
 
+export const HINT_UUID = 'Wird automatisch vergeben und kann nicht geändert werden.';
+
 export function Editor({ field, value, error }) {
-  return (
-    <FieldFrame field={field} error={error}>
-      <input type="text" {...aria(field, error)} value={value ?? ''} readOnly />
-    </FieldFrame>
-  );
+  return <FixedField field={field} value={value} hint={HINT_UUID} error={error} />;
 }
 
 export default { Editor, validate, empty: '' };
