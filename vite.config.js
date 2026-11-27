@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import anleitungPage from './scripts/anleitungPage.js';
 
 // Content-Security-Policy als <meta>, nur im Build: im Dev-Modus fügt Vite
 // eigene Inline-Skripte ein, die diese CSP blockieren würde.
@@ -24,7 +25,7 @@ const [major, minor] = process.versions.node.split('.').map(Number);
 const hasWebstorageFlag = major > 22 || (major === 22 && minor >= 4);
 
 export default defineConfig({
-  plugins: [react(), cspMeta()],
+  plugins: [react(), cspMeta(), anleitungPage()],
   // Relative Pfade: läuft in jedem Unterordner (GitHub Pages).
   base: './',
   server: { port: 5174 },
