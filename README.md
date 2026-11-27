@@ -5,6 +5,8 @@ zuerst des OER-Katalogs. Bearbeitet wird über die GitHub-API. Es gibt keinen ei
 Datenbank; die einzige externe Verbindung ist `https://api.github.com`. Die Oberfläche ist deutsch
 und verwendet kein Git-Vokabular.
 
+**Online:** https://phzh-zdl.github.io/cms/ · **Anleitung:** https://phzh-zdl.github.io/cms/anleitung.html
+
 ## Dokumentation
 
 | Dokument | Für wen |
@@ -15,9 +17,13 @@ und verwendet kein Git-Vokabular.
 | [`docs/BARRIEREFREIHEIT.md`](docs/BARRIEREFREIHEIT.md) | Prüfung nach WCAG 2.1 AA, bekannte Lücken, Checkliste |
 | [`backup/README.md`](backup/README.md) | Nächtliche Sicherung und Wiederherstellung |
 
+Offene Punkte und getroffene Entscheide: [`docs/OFFENE-PUNKTE.md`](docs/OFFENE-PUNKTE.md).
+
 Konzept und Umsetzungsplan: [`docs/superpowers/`](docs/superpowers/).
 
 ## Lokal starten
+
+Voraussetzung: Node 24 (LTS) oder neuer, npm.
 
 ```bash
 npm install
