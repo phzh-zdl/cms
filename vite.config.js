@@ -22,5 +22,5 @@ export default defineConfig({
   // Relative Pfade: läuft in jedem Unterordner (GitHub Pages).
   base: './',
   server: { port: 5174 },
-  test: { environment: 'jsdom' },
+  test: { environment: 'jsdom', execArgv: ['--no-experimental-webstorage'] },
 });
