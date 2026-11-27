@@ -1,5 +1,6 @@
 // Seiten (Repos mit cms.json) finden und eine Seite vollstaendig laden.
 import { parseCmsConfig } from '../config/cmsConfig.js';
+import { DEFAULT_ORG } from './siteHash.js';
 
 const BRANCH = 'main';
 const CONCURRENCY = 6;
@@ -30,7 +31,7 @@ async function mapLimit(items, limit, fn) {
   return out;
 }
 
-export async function listSites(client, org = 'phzh-zdl') {
+export async function listSites(client, org = DEFAULT_ORG) {
   const repos = (await client.listRepos()).filter((r) => r.full_name.startsWith(`${org}/`));
   const found = await mapLimit(repos, CONCURRENCY, async ({ full_name: repo }) => {
     const file = await client.getFileText(repo, 'cms.json', BRANCH);

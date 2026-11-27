@@ -17,7 +17,7 @@ export default function App() {
   const [attempt, setAttempt] = useState(0);
   const [checkError, setCheckError] = useState(null);
   const [session, setSession] = useState(null); // { token, user, client }
-  const loadToken_ = useRef(0); // verwirft Ergebnisse veralteter Ladevorgaenge
+  const requestSeq = useRef(0); // verwirft Ergebnisse veralteter Ladevorgaenge
   const [view, setView] = useState({ status: 'list' });
 
   useEffect(() => {
@@ -59,26 +59,27 @@ export default function App() {
   }
 
   async function openSite(repo, client = session.client) {
-    const token = ++loadToken_.current;
+    const token = ++requestSeq.current;
     window.location.hash = `#/${repo}`;
     setView({ status: 'loading', repo });
     try {
       const site = await loadSite(client, repo);
-      if (token === loadToken_.current) setView({ status: 'editor', site });
+      if (token === requestSeq.current) setView({ status: 'editor', site });
     } catch (e) {
-      if (token === loadToken_.current) setView({ status: 'error', message: e?.message || 'Die Seite konnte nicht geladen werden.' });
+      if (token === requestSeq.current) setView({ status: 'error', message: e?.message || 'Die Seite konnte nicht geladen werden.' });
     }
   }
 
   function closeSite() {
-    loadToken_.current++;
+    requestSeq.current++;
     window.location.hash = '';
     setView({ status: 'list' });
   }
 
   function handleLogout() {
     clearToken();
-    loadToken_.current++;
+    requestSeq.current++;
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
     setView({ status: 'list' });
     setSession(null);
     setPhase('login');

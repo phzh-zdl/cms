@@ -62,8 +62,8 @@ describe('App site opening', () => {
     });
     expect(el.querySelector('input#token')).not.toBeNull();
     expect(el.textContent).not.toContain('Geheim');
-    // erneut anmelden (hier bleibt der Hash leer): Seitenliste, nicht der alte Editor
-    window.location.hash = '';
+    expect(window.location.hash).toBe('');
+    // erneut anmelden: Seitenliste, nicht der alte Editor
     const input = el.querySelector('input#token');
     act(() => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'neu');
