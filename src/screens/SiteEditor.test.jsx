@@ -1,14 +1,15 @@
-import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
 import SiteEditor from './SiteEditor.jsx';
 import { serializeJson } from '../save/serialize.js';
 import { AuthError } from '../github/client.js';
+import { loadDraft } from '../save/drafts.js';
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 let container, root;
 beforeEach(() => { localStorage.clear(); });
-afterEach(() => { act(() => root?.unmount()); container?.remove(); container = root = null; });
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); act(() => root?.unmount()); container?.remove(); container = root = null; });
 
 async function render(ui) {
   container = document.createElement('div');
@@ -142,5 +143,83 @@ describe('SiteEditor speichern', () => {
     expect(localStorage.getItem('cms.draft.o/r')).toBeNull();
     expect(c.textContent).toContain('Natur');
     expect(c.textContent).not.toContain('Aus dem Entwurf');
+  });
+
+  // updateRef haengt, bis release() aufgerufen wird
+  function heldClient() {
+    const client = fakeClient();
+    let release;
+    const held = new Promise((r) => { release = r; });
+    client.updateRef = async (...a) => { client.calls.push(['updateRef', ...a]); await held; };
+    return { client, release: () => release() };
+  }
+  const openNatur = async (c) =>
+    click([...c.querySelectorAll('.entry-list button')].find((b) => b.textContent.includes('Natur')));
+
+  it('Aenderung waehrend des Speicherns bleibt ungespeichert und im Entwurf', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const { client, release } = heldClient();
+    const c = await render(<SiteEditor site={makeSite()} client={client} onBack={() => {}} />);
+    await openNatur(c);
+    await type(c.querySelector('#field-label'), 'A');
+    await click(button(c, 'Speichern'));
+    expect(c.textContent).toContain('Wird gespeichert …');
+    await type(c.querySelector('#field-label'), 'B');
+    await act(async () => release());
+    expect(c.querySelector('#field-label').value).toBe('B');
+    expect(c.textContent).toContain('Ungespeicherte Änderungen');
+    await act(async () => vi.advanceTimersByTime(1100));
+    const draft = loadDraft('o/r');
+    expect(draft.data.categories[0].label).toBe('B');
+    expect(draft.baseSha).toBe('commit1');
+  });
+
+  it('Verlassen waehrend des Speicherns: Entwurf mit der neueren Aenderung bleibt', async () => {
+    const { client, release } = heldClient();
+    const c = await render(<SiteEditor site={makeSite()} client={client} onBack={() => {}} />);
+    await openNatur(c);
+    await type(c.querySelector('#field-label'), 'A');
+    await click(button(c, 'Speichern'));
+    await type(c.querySelector('#field-label'), 'B');
+    act(() => root.unmount());
+    root = null;
+    await act(async () => release());
+    const draft = loadDraft('o/r');
+    expect(draft.data.categories[0].label).toBe('B');
+    expect(draft.baseSha).toBe('commit1');
+  });
+
+  it('Verlassen waehrend des Speicherns ohne neuere Aenderung: kein veralteter Entwurf', async () => {
+    const { client, release } = heldClient();
+    const c = await render(<SiteEditor site={makeSite()} client={client} onBack={() => {}} />);
+    await openNatur(c);
+    await type(c.querySelector('#field-label'), 'A');
+    await click(button(c, 'Speichern'));
+    act(() => root.unmount());
+    root = null;
+    await act(async () => release());
+    expect(loadDraft('o/r')).toBeNull();
+  });
+
+  it('voller Speicher + AuthError: ehrliche Meldung', async () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('voll', 'QuotaExceededError'); });
+    const client = fakeClient({ createBlob: new AuthError(401, 'x') });
+    const c = await render(<SiteEditor site={makeSite()} client={client} onBack={() => {}} />);
+    await openNatur(c);
+    await type(c.querySelector('#field-label'), 'Natur und Technik');
+    await click(button(c, 'Speichern'));
+    expect(c.querySelector('[role="alert"]').textContent)
+      .toBe('Ihr Zugangsschlüssel ist abgelaufen oder ungültig. Ihre Änderungen konnten nicht als Entwurf gesichert werden – bitte diese Seite nicht schliessen.');
+  });
+
+  it('voller Speicher + anderer Fehler: ehrliche Meldung', async () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('voll', 'QuotaExceededError'); });
+    const client = fakeClient({ createBlob: new Error('kaputt') });
+    const c = await render(<SiteEditor site={makeSite()} client={client} onBack={() => {}} />);
+    await openNatur(c);
+    await type(c.querySelector('#field-label'), 'Natur und Technik');
+    await click(button(c, 'Speichern'));
+    expect(c.querySelector('[role="alert"]').textContent)
+      .toBe('Speichern fehlgeschlagen. Ihre Änderungen konnten nicht als Entwurf gesichert werden – bitte diese Seite nicht schliessen.');
   });
 });

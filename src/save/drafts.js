@@ -51,3 +51,15 @@ function base64ToBytes(b64) {
 
 export const imagesToDraft = (images) => images.map(({ path, bytes }) => ({ path, base64: bytesToBase64(bytes) }));
 export const imagesFromDraft = (images) => images.map(({ path, base64 }) => ({ path, bytes: base64ToBytes(base64) }));
+
+// Nach erfolgreichem Speichern, wenn der Editor nicht mehr offen ist: Ein Entwurf, der genau
+// dem Gespeicherten entspricht, ist erledigt; enthaelt er neuere Aenderungen, bleibt er und
+// baut nun auf der neuen Version auf. Entwuerfe auf einer anderen Basis bleiben unberuehrt.
+export function settleDraftAfterSave(repo, snapshot, oldSha, newSha) {
+  const draft = loadDraft(repo);
+  if (!draft || draft.baseSha !== oldSha) return;
+  const content = (s) => JSON.stringify([s.data, s.pages, s.removedFiles, s.newImages]);
+  const saved = { ...snapshot, newImages: imagesToDraft(snapshot.newImages) };
+  if (content(draft) === content(saved)) clearDraft(repo);
+  else saveDraft(repo, { ...draft, baseSha: newSha });
+}

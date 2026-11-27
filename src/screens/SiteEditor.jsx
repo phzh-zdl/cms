@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import CollectionView from '../editor/CollectionView.jsx';
 import SaveBar from '../editor/SaveBar.jsx';
 import { planDelete, applyDelete } from '../content/deleteRules.js';
@@ -6,20 +6,24 @@ import { collectionErrors } from '../editor/entryState.js';
 import { AuthError, ConflictError, GitHubError } from '../github/client.js';
 import { useSiteWorkingCopy } from '../save/useSiteWorkingCopy.js';
 import { useDraftAutosave } from '../save/useDraftAutosave.js';
-import { loadDraft, clearDraft } from '../save/drafts.js';
+import { loadDraft, clearDraft, settleDraftAfterSave } from '../save/drafts.js';
 import { buildCommitMessage, summarizeChanges } from '../save/commitMessage.js';
 import { saveChanges } from '../save/saveChanges.js';
 
-const MSG_AUTH = 'Ihr Zugangsschlüssel ist abgelaufen oder ungültig. Ihre Änderungen sind als Entwurf gesichert.';
+const DRAFT_OK = 'Ihre Änderungen sind als Entwurf gesichert.';
+const DRAFT_FAILED = 'Ihre Änderungen konnten nicht als Entwurf gesichert werden – bitte diese Seite nicht schliessen.';
+const MSG_AUTH = 'Ihr Zugangsschlüssel ist abgelaufen oder ungültig.';
 const MSG_CONFLICT = 'Inzwischen hat jemand anderes gespeichert. Das Zusammenführen folgt in einem späteren Schritt.';
 
 const draftDate = (iso) => new Date(iso).toLocaleString('de-CH', { dateStyle: 'medium', timeStyle: 'short' });
 
-function errorText(e) {
-  if (e instanceof AuthError) return MSG_AUTH;
-  if (e instanceof ConflictError) return MSG_CONFLICT;
-  if (e instanceof GitHubError) return e.message;
-  return 'Speichern fehlgeschlagen. Ihre Änderungen sind als Entwurf gesichert.';
+// drafted = ob der Entwurf vor dem Speichern wirklich gesichert werden konnte.
+function errorText(e, drafted) {
+  const draftNote = drafted ? DRAFT_OK : DRAFT_FAILED;
+  if (e instanceof AuthError) return `${MSG_AUTH} ${draftNote}`;
+  if (e instanceof ConflictError) return drafted ? MSG_CONFLICT : `${MSG_CONFLICT} ${DRAFT_FAILED}`;
+  if (e instanceof GitHubError) return drafted ? e.message : `${e.message} ${DRAFT_FAILED}`;
+  return `Speichern fehlgeschlagen. ${draftNote}`;
 }
 
 // Seitenleiste + Hauptbereich. Arbeitsstand und Basis liegen in useSiteWorkingCopy.
@@ -32,6 +36,11 @@ export default function SiteEditor({ site, client, onBack }) {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState(null);
   const [blockRequested, setBlockRequested] = useState(false);
+  // Neuester Arbeitsstand und ob der Editor noch offen ist - fuer das Ende eines Speichervorgangs.
+  const latest = useRef();
+  latest.current = { data, pages, removedFiles, newImages };
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [current, setCurrent] = useState(() =>
     config.collections[0]
       ? { kind: 'collection', id: config.collections[0].id }
@@ -54,20 +63,34 @@ export default function SiteEditor({ site, client, onBack }) {
     if (invalidCollections.length > 0) { setBlockRequested(true); return; }
     setBlockRequested(false);
     if (!dirty) { setResult({ kind: 'info', text: 'Es gibt keine Änderungen zum Speichern.' }); return; }
-    autosave.flush(); // Entwurf zuerst sichern - bleibt bei jedem Fehler erhalten
+    const drafted = autosave.flush(); // Entwurf zuerst sichern - bleibt bei jedem Fehler erhalten
     const snapshot = { data, pages, changes, newImages, removedFiles };
+    const baseSha = base.headSha;
     const message = buildCommitMessage(summarizeChanges(config, base.data, data, base.pages, pages), newImages.length);
     setSaving(true);
+    let sha;
     try {
-      const sha = await saveChanges(client, site.repo, { baseSha: base.headSha, changes, message });
-      wc.markSaved(sha, snapshot);
-      clearDraft(site.repo);
-      setResult({ kind: 'success', text: 'Gespeichert.' });
+      sha = await saveChanges(client, site.repo, { baseSha, changes, message });
     } catch (e) {
-      setResult({ kind: 'error', text: errorText(e) });
-    } finally {
-      setSaving(false);
+      if (mounted.current) {
+        setResult({ kind: 'error', text: errorText(e, drafted) });
+        setSaving(false);
+      }
+      return;
     }
+    if (!mounted.current) {
+      // Editor wurde waehrend des Speicherns verlassen: Entwurf nur loeschen, wenn er nichts Neueres enthaelt.
+      settleDraftAfterSave(site.repo, snapshot, baseSha, sha);
+      return;
+    }
+    wc.markSaved(sha, snapshot);
+    const l = latest.current;
+    const untouched = l.data === snapshot.data && l.pages === snapshot.pages
+      && l.removedFiles === snapshot.removedFiles && l.newImages === snapshot.newImages;
+    // Wurde waehrend des Speicherns weiter bearbeitet, sichert die Autosave-Logik den neuen Stand.
+    if (untouched) clearDraft(site.repo);
+    setResult({ kind: 'success', text: 'Gespeichert.' });
+    setSaving(false);
   }
 
   const item = current && (current.kind === 'collection'
