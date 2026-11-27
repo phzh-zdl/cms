@@ -60,10 +60,16 @@ describe('useSiteWorkingCopy.rebase', () => {
     expect(wc.data.cat).toEqual([{ ...X, label: 'X von mir' }, { ...Y, label: 'Y von anderen' }]);
     expect(wc.data.res).toEqual(theirsData.res);
     expect(wc.pages.imp.html).toBe('<p>mein</p>');
-    expect(wc.base.ancestor).toEqual({ data: { cat: [X, Y] }, pages: { imp: PAGE } });
-    // markSaved behaelt die Vergleichsbasis
+    // pro Eintrag: nur X (nach dem Klick bearbeitet) mit dem Stand vom Klick, sonst der zusammengefuehrte
+    const expected = { data: { cat: [X, { ...Y, label: 'Y von anderen' }] }, pages: { imp: PAGE } };
+    expect(wc.base.ancestor).toEqual(expected);
+    // markSaved behaelt die Vergleichsbasis, solange die neueren Aenderungen ungespeichert sind
     await act(async () => wc.markSaved('h2', { changes: [], data: merged.data, pages: merged.pages, removedFiles: [], newImages: [] }));
-    expect(wc.base.ancestor).toEqual({ data: { cat: [X, Y] }, pages: { imp: PAGE } });
+    expect(wc.base.ancestor).toEqual(expected);
+    // ... und laesst sie fallen, sobald der Arbeitsstand gespeichert ist
+    const now = wc.peek();
+    await act(async () => wc.markSaved('h3', { changes: [], data: now.data, pages: now.pages, removedFiles: [], newImages: [] }));
+    expect(wc.base.ancestor).toBeNull();
   });
 
   it('peek liefert den neuesten Stand auch vor dem Neuzeichnen', async () => {
