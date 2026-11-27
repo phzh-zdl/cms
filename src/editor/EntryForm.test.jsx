@@ -68,7 +68,7 @@ describe('EntryForm', () => {
     const opt = c.querySelector('select#field-license_id');
     expect([...opt.options].map((o) => o.textContent)).toEqual(['— keine Auswahl —', 'Kunst', 'Natur']);
     expect(c.querySelector('fieldset legend').textContent).toContain('Formate');
-    expect(c.textContent).toContain('Folgt in einem späteren Schritt.');
+    expect(c.textContent).toContain('Bild wählen');
   });
   it('reference-multi required: Fehler bis ein Haken gesetzt ist', async () => {
     const onChange = vi.fn();

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { contentPath } from '../content/site.js';
 import CollectionView from '../editor/CollectionView.jsx';
 import SaveBar from '../editor/SaveBar.jsx';
 import { planDelete, applyDelete } from '../content/deleteRules.js';
@@ -46,6 +47,20 @@ export default function SiteEditor({ site, client, onBack }) {
     config.collections[0]
       ? { kind: 'collection', id: config.collections[0].id }
       : config.pages[0] ? { kind: 'page', id: config.pages[0].id } : null);
+
+  // Bild-Operationen fuer das Bildfeld (siehe ImageField).
+  const images = {
+    fullPath: (dir, name) => contentPath(config, `${dir}/${name}`),
+    add: (path, bytes) => wc.setNewImages((l) => [...l.filter((i) => i.path !== path), { path, bytes }]),
+    discard: (path) => wc.setNewImages((l) => l.filter((i) => i.path !== path)),
+    isNew: (path) => latest.current.newImages.some((i) => i.path === path),
+    markRemoved: (path) => wc.setRemovedFiles((l) => [...new Set([...l, path])]),
+    async preview(path) {
+      const fresh = latest.current.newImages.find((i) => i.path === path);
+      const bytes = fresh ? fresh.bytes : await client.getFileBytes(site.repo, path, base.headSha);
+      return bytes ? URL.createObjectURL(new Blob([bytes], { type: 'image/webp' })) : null;
+    },
+  };
 
   const unsaved = dirty || saving;
   useEffect(() => {
@@ -154,7 +169,7 @@ export default function SiteEditor({ site, client, onBack }) {
         {conflictSave.dialog && <ConflictDialog {...conflictSave.dialog} />}
         {current?.kind === 'collection' && item && (
           <CollectionView key={item.id} collection={item} data={data} original={base.data}
-            collections={config.collections}
+            collections={config.collections} images={images}
             planFor={(id) => planDelete(data, config, item.id, id)}
             onDelete={(id, opts) => {
               const res = applyDelete(data, config, item.id, id, opts);

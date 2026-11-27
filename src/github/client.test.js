@@ -71,6 +71,22 @@ describe('github client', () => {
     expect(f.calls[0].url).toBe('https://api.github.com/repos/o/r/contents/a.md')
   })
 
+  it('getFileBytes liefert die Bytes aus base64 und null bei 404', async () => {
+    const b64 = btoa(String.fromCharCode(1, 2, 255))
+    const f = fake(res(200, { content: b64, encoding: 'base64', sha: 's1' }), res(404, { message: 'Not Found' }))
+    const c = createClient('t', f)
+    expect([...(await c.getFileBytes('o/r', 'images/a.webp', 'abc'))]).toEqual([1, 2, 255])
+    expect(f.calls[0].url).toBe('https://api.github.com/repos/o/r/contents/images/a.webp?ref=abc')
+    expect(await c.getFileBytes('o/r', 'images/b.webp', 'abc')).toBeNull()
+  })
+
+  it('getFileBytes nutzt die Blob-API fuer Dateien ueber 1 MB', async () => {
+    const f = fake(res(200, { content: '', encoding: 'none', sha: 'zz' }), res(200, { content: btoa('AB') }))
+    const r = await createClient('t', f).getFileBytes('o/r', 'big.webp', 'abc')
+    expect([...r]).toEqual([65, 66])
+    expect(f.calls[1].url).toBe('https://api.github.com/repos/o/r/git/blobs/zz')
+  })
+
   it('getFileText gibt null bei 404', async () => {
     const f = fake(res(404, { message: 'Not Found' }))
     expect(await createClient('t', f).getFileText('o/r', 'x.md', 'main')).toBeNull()

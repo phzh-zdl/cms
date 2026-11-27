@@ -7,8 +7,8 @@ export const keyOf = (collection) => collection.key ?? 'id';
 export const isNewEntry = (collection, entry, original) =>
   !(original?.[collection.id] ?? []).some((r) => r[keyOf(collection)] === entry[keyOf(collection)]);
 
-export const makeCtx = ({ data, collections, collection, entry, isNew }) => ({
-  data, collections, collection, entryId: entry[keyOf(collection)], isNew,
+export const makeCtx = ({ data, collections, collection, entry, isNew, images }) => ({
+  data, collections, collection, entry, entryId: entry[keyOf(collection)], isNew, images,
 });
 
 // { [entryId]: { [fieldName]: Meldung } } - nur Eintraege mit Fehlern.

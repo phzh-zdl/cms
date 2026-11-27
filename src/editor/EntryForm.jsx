@@ -4,8 +4,8 @@ import { keyOf, makeCtx } from './entryState.js';
 import DeleteDialog from './DeleteDialog.jsx';
 
 // Bearbeitet einen Eintrag direkt im Arbeitsstand (onChange bei jeder Eingabe).
-export default function EntryForm({ collection, entry, data, collections, isNew, onChange, onBack, planFor, onDelete }) {
-  const ctx = makeCtx({ data, collections, collection, entry, isNew });
+export default function EntryForm({ collection, entry, data, collections, isNew, images, onChange, onBack, planFor, onDelete }) {
+  const ctx = makeCtx({ data, collections, collection, entry, isNew, images });
   const errors = validateEntry(collection.fields, entry, ctx);
   const key = keyOf(collection);
   const [plan, setPlan] = useState(null);

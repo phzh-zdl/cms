@@ -87,6 +87,22 @@ export function createClient(token, fetchImpl = (...a) => fetch(...a)) {
 
   const getBlob = async (repo, sha) => base64ToBytes((await json(`/repos/${repo}/git/blobs/${sha}`)).content)
 
+  async function readFile(repo, path, ref) {
+    const query = ref ? `?ref=${encodeURIComponent(ref)}` : ''
+    const res = await raw(`/repos/${repo}/contents/${encodePath(path)}${query}`)
+    if (res.status === 404) return null
+    if (!res.ok) throw await fail(res)
+    const f = await res.json()
+    if (Array.isArray(f)) {
+      throw new GitHubError(res.status, `Erwartet wurde eine Datei, gefunden wurde ein Ordner: ${path}`)
+    }
+    // Dateien über 1 MB liefert die Contents-API ohne Inhalt (encoding "none")
+    const bytes = f.encoding === 'base64' ? base64ToBytes(f.content) : await getBlob(repo, f.sha)
+    return { bytes, sha: f.sha }
+  }
+
+  const getFileBytes = async (repo, path, ref) => (await readFile(repo, path, ref))?.bytes ?? null
+
   return {
     async getUser() {
       const u = await json('/user')
@@ -120,18 +136,11 @@ export function createClient(token, fetchImpl = (...a) => fetch(...a)) {
 
     getBlob,
 
+    getFileBytes,
+
     async getFileText(repo, path, ref) {
-      const query = ref ? `?ref=${encodeURIComponent(ref)}` : ''
-      const res = await raw(`/repos/${repo}/contents/${encodePath(path)}${query}`)
-      if (res.status === 404) return null
-      if (!res.ok) throw await fail(res)
-      const f = await res.json()
-      if (Array.isArray(f)) {
-        throw new GitHubError(res.status, `Erwartet wurde eine Datei, gefunden wurde ein Ordner: ${path}`)
-      }
-      // Dateien über 1 MB liefert die Contents-API ohne Inhalt (encoding "none")
-      const bytes = f.encoding === 'base64' ? base64ToBytes(f.content) : await getBlob(repo, f.sha)
-      return { text: new TextDecoder().decode(bytes), sha: f.sha }
+      const file = await readFile(repo, path, ref)
+      return file && { text: new TextDecoder().decode(file.bytes), sha: file.sha }
     },
 
     async createBlob(repo, bytes) {

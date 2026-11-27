@@ -9,6 +9,7 @@ import boolean from './boolean.jsx';
 import number from './number.jsx';
 import reference from './reference.jsx';
 import referenceMulti from './referenceMulti.jsx';
+import image from './ImageField.jsx';
 import placeholder from './placeholder.jsx';
 
 export { deriveSlug } from './slugify.js';
@@ -24,7 +25,7 @@ export const fieldTypes = {
   number,
   reference,
   'reference-multi': referenceMulti,
-  image: placeholder,
+  image,
   richtext: placeholder,
 };
 
