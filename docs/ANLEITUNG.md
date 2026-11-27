@@ -232,9 +232,14 @@ Unter **Textseiten** (links) liegen Seiten wie Impressum, Datenschutz oder Konta
 1. Klicke die Seite an. Oben steht der **Titel**, darunter der Text mit einer Werkzeugleiste.
 2. Markiere Text und wähle in der Werkzeugleiste zum Beispiel **Fett**, **Kursiv**,
    **Zwischentitel**, **Aufzählung** oder **Nummerierte Liste**.
-3. **Link:** Text markieren, **Link** klicken, die Adresse eingeben. Erlaubt sind Adressen
-   mit `https://`, E-Mail-Adressen mit `mailto:` und Links auf andere Seiten
-   (**Link auf andere Seite**, wo angeboten). Andere Adressen lehnt das CMS ab.
+3. **Link:** Cursor setzen oder Text markieren, **Link** klicken. Im Formular stehen
+   **Anzeigetext** (so steht es im Text, bei Markierung ist es der markierte Text) und
+   **Linkadresse**. Lässt du den Anzeigetext leer, wird die Adresse als Text verwendet.
+   Erlaubt sind Adressen mit `https://`, E-Mail-Adressen mit `mailto:` und Links auf andere
+   Seiten (**Link auf andere Seite**, wo angeboten). Andere Adressen lehnt das CMS ab.
+   Einen bestehenden Link änderst du, indem du in den Link klickst und wieder **Link** wählst.
+   *Du müsstest jetzt* beide Felder ausgefüllt sehen; nach **Übernehmen** erscheint der
+   Anzeigetext als Link im Text. Fett oder kursiv im Linktext geht dabei verloren.
 4. Mit **Vorschau anzeigen** siehst du, wie der Text aussieht; **Bearbeiten** geht zurück.
 5. Du gibst nie Code ein. Eingefügter Text aus Word oder dem Web wird automatisch
    bereinigt, Formatierungen, die es nicht gibt, fallen weg.

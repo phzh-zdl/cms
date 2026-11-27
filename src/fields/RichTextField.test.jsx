@@ -22,6 +22,10 @@ const urlInput = (c) => {
   const label = [...c.querySelectorAll('label')].find((l) => l.textContent === 'Linkadresse');
   return document.getElementById(label.htmlFor);
 };
+const textInput = (c) => {
+  const label = [...c.querySelectorAll('label')].find((l) => l.textContent === 'Anzeigetext');
+  return document.getElementById(label.htmlFor);
+};
 async function type(el, value) {
   await act(async () => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, value);
@@ -138,6 +142,81 @@ describe('RichTextField link dialog', () => {
     });
     await click(text(c, 'Übernehmen'));
     expect(onChange.mock.calls.at(-1)[0]).toContain('href="impressum.html"');
+  });
+});
+
+describe('RichTextField link form with Anzeigetext', () => {
+  const open = async (value, onChange, prep) => {
+    const c = await render(<RichTextField label="Inhalt" value={value} onChange={onChange} toolbar="basic" />);
+    await act(async () => { prep(editorEl(c).editor); });
+    await click(byLabel(c, 'Link'));
+    return c;
+  };
+  const last = (f) => f.mock.calls.at(-1)[0];
+
+  it('orders fields Anzeigetext, Linkadresse and focuses the empty text', async () => {
+    const c = await open('<p>Hallo</p>', vi.fn(), (e) => e.commands.setTextSelection(1));
+    const labels = [...c.querySelectorAll('form.link-form label')].map((l) => l.textContent);
+    expect(labels).toEqual(['Anzeigetext', 'Linkadresse']);
+    expect(document.activeElement).toBe(textInput(c));
+  });
+
+  it('inserts the given text with href when nothing is selected', async () => {
+    const onChange = vi.fn();
+    const c = await open('<p>Hallo</p>', onChange, (e) => e.commands.setTextSelection(1));
+    await type(textInput(c), 'Zur PHZH');
+    await type(urlInput(c), 'https://phzh.ch');
+    await click(text(c, 'Übernehmen'));
+    expect(last(onChange)).toContain('href="https://phzh.ch" target="_blank" rel="noopener noreferrer">Zur PHZH</a>');
+  });
+
+  it('prefills the selection and replaces it with the edited text', async () => {
+    const onChange = vi.fn();
+    const c = await open('<p>Hallo Welt</p>', onChange, (e) => e.commands.setTextSelection({ from: 1, to: 6 }));
+    expect(textInput(c).value).toBe('Hallo');
+    expect(document.activeElement).toBe(urlInput(c));
+    await type(textInput(c), 'Gruss');
+    await type(urlInput(c), 'https://phzh.ch');
+    await click(text(c, 'Übernehmen'));
+    expect(last(onChange)).toContain('>Gruss</a> Welt');
+  });
+
+  it('edits an existing link: prefills both and changes text and href', async () => {
+    const onChange = vi.fn();
+    const c = await open('<p>Siehe <a href="https://alt.ch">alter Link</a> hier</p>', onChange, (e) => e.commands.setTextSelection(8));
+    expect(textInput(c).value).toBe('alter Link');
+    expect(urlInput(c).value).toBe('https://alt.ch');
+    await type(textInput(c), 'neuer Link');
+    await type(urlInput(c), 'https://neu.ch');
+    await click(text(c, 'Übernehmen'));
+    expect(last(onChange)).toContain('Siehe <a href="https://neu.ch"');
+    expect(last(onChange)).toContain('>neuer Link</a> hier');
+  });
+
+  it('falls back to the URL (without mailto:) when the text is empty', async () => {
+    const onChange = vi.fn();
+    const c = await open('<p>Hallo</p>', onChange, (e) => e.commands.setTextSelection(1));
+    await type(urlInput(c), 'mailto:a@b.ch');
+    await click(text(c, 'Übernehmen'));
+    expect(last(onChange)).toContain('href="mailto:a@b.ch"');
+    expect(last(onChange)).toContain('>a@b.ch</a>');
+  });
+
+  it('shows MSG_LINK and changes nothing for an invalid URL', async () => {
+    const onChange = vi.fn();
+    const c = await open('<p>Hallo</p>', onChange, (e) => e.commands.selectAll());
+    await type(textInput(c), 'X');
+    await type(urlInput(c), 'javascript:alert(1)');
+    await click(text(c, 'Übernehmen'));
+    expect(c.querySelector('[role="alert"]').textContent).toBe('Nur https-Links oder E-Mail-Adressen');
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('remove link keeps the text', async () => {
+    const onChange = vi.fn();
+    const c = await open('<p>Siehe <a href="https://alt.ch">alter Link</a></p>', onChange, (e) => e.commands.setTextSelection(8));
+    await click(text(c, 'Link entfernen'));
+    expect(last(onChange)).toBe('<p>Siehe alter Link</p>');
   });
 });
 

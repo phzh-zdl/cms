@@ -18,6 +18,12 @@ updates:
       timezone: "Europe/Zurich"
     open-pull-requests-limit: 5
     groups:
+      # react und react-dom müssen immer dieselbe Version haben — auch bei
+      # grossen Sprüngen (Major) kommen sie deshalb gemeinsam in einem PR.
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
       # Patch- und Minor-Updates in einen einzigen PR pro Woche bündeln,
       # damit nicht für jedes kleine Update ein eigener PR aufgeht.
       minor-and-patch:

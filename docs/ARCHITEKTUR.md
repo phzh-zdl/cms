@@ -365,7 +365,7 @@ node scripts/check-workflows.mjs
 ```
 
 Mit einem echten Schlüssel nur gegen das Test-Repo `phzh-zdl/cms-test` arbeiten, nicht gegen
-Echtinhalte. Node 20 oder neuer. Die Tests laufen ohne Schlüssel und ohne Netzwerk (gemockte Aufrufe).
+Echtinhalte. Node 24 (LTS) oder neuer; Node 20 wird nicht mehr unterstützt (jsdom 31 braucht mindestens Node 22). Die Tests laufen ohne Schlüssel und ohne Netzwerk (gemockte Aufrufe).
 
 ## Deployment und Sicherung
 

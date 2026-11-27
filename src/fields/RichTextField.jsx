@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { getMarkRange } from '@tiptap/core';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -57,13 +58,18 @@ export default function RichTextField({ label, value, onChange, toolbar = 'basic
   if (!editor) return null;
 
   const closeDialog = () => { setDialog(null); editor.chain().focus().run(); };
-  const applyLink = (href) => {
-    const chain = editor.chain().focus();
-    if (editor.state.selection.empty && !editor.isActive('link')) {
-      chain.insertContent({ type: 'text', text: href, marks: [{ type: 'link', attrs: { href } }] }).run();
-    } else {
-      chain.extendMarkRange('link').setLink({ href }).run();
-    }
+  // Bereich, den das Linkformular ersetzt: bestehender Link, sonst Auswahl, sonst Cursor.
+  const linkRange = () => {
+    const { selection, doc } = editor.state;
+    const found = editor.isActive('link')
+      ? getMarkRange(doc.resolve(selection.from), editor.schema.marks.link) : null;
+    return found ?? { from: selection.from, to: selection.to };
+  };
+  const rangeText = () => { const { from, to } = linkRange(); return editor.state.doc.textBetween(from, to, ' '); };
+  // Ersetzt den Bereich durch den Anzeigetext mit Link (nur die Link-Auszeichnung bleibt).
+  const applyLink = ({ href, text }) => {
+    editor.chain().focus().insertContentAt(linkRange(),
+      { type: 'text', text, marks: [{ type: 'link', attrs: { href } }] }).run();
     setDialog(null);
   };
 
@@ -72,10 +78,10 @@ export default function RichTextField({ label, value, onChange, toolbar = 'basic
       <p className="field-label">{label}</p>
       <Toolbar editor={editor} toolbar={toolbar} onLink={() => setDialog('link')} onPageLink={() => setDialog('page')} />
       {dialog === 'link' && (
-        <LinkForm initial={editor.getAttributes('link').href ?? ''} onSubmit={applyLink} onCancel={closeDialog}
+        <LinkForm initial={editor.getAttributes('link').href ?? ''} initialText={rangeText()} onSubmit={applyLink} onCancel={closeDialog}
           onRemove={() => { editor.chain().focus().extendMarkRange('link').unsetLink().run(); setDialog(null); }} />
       )}
-      {dialog === 'page' && <PageLinkForm pageIds={pageIds} onSubmit={applyLink} onCancel={closeDialog} />}
+      {dialog === 'page' && <PageLinkForm pageIds={pageIds} initialText={rangeText()} onSubmit={applyLink} onCancel={closeDialog} />}
       <EditorContent editor={editor} />
       {error && <p className="field-error">{error}</p>}
     </div>
