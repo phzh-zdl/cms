@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { newEntry } from '../fields/registry.js';
 import EntryForm from './EntryForm.jsx';
 import { collectionErrors, isNewEntry, keyOf, titleOf, displayTitle } from './entryState.js';
@@ -22,26 +22,43 @@ export default function CollectionView({
 }) {
   const rows = data[collection.id] ?? [];
   const [query, setQuery] = useState('');
-  // Offener Eintrag: Position in rows; isNew wird beim Oeffnen festgelegt,
-  // damit die Kennung nicht mitten im Tippen schreibgeschuetzt wird. Aendert sich die
-  // Basis (nach dem Speichern), gilt wieder der Vergleich mit der neuen Basis.
+  const key = keyOf(collection);
+  // Offener Eintrag: ueber das Zeilen-Objekt (row, bei jeder Eingabe nachgefuehrt) bzw. seine Kennung,
+  // nicht ueber die Position - ein Zusammenfuehren beim Speichern kann die Reihenfolge aendern. isNew wird beim Oeffnen festgelegt, damit die
+  // Kennung nicht mitten im Tippen schreibgeschuetzt wird. Aendert sich die Basis (nach dem
+  // Speichern), gilt wieder der Vergleich mit der neuen Basis.
   const [open, setOpen] = useState(() => {
-    const index = initialEntry === undefined ? -1 : rows.findIndex((r) => r[keyOf(collection)] === initialEntry);
-    return index === -1 ? null : { index, isNew: isNewEntry(collection, rows[index], original), original };
+    const row = initialEntry === undefined ? undefined : rows.find((r) => r[key] === initialEntry);
+    return row ? { id: row[key], row, isNew: isNewEntry(collection, row, original), original } : null;
   });
-  const openEntry = (index, isNew) => setOpen({ index, isNew, original });
+  const [gone, setGone] = useState(false); // offener Eintrag ist verschwunden (von jemand anderem geloescht)
+  const openEntry = (row, isNew) => { setGone(false); setOpen({ id: row[key], row, isNew, original }); };
+  // Zuerst genau die zuletzt bearbeitete Zeile (eindeutig, auch bei doppelt getippter Kennung),
+  // sonst - die Zeilen wurden ersetzt, z. B. beim Zusammenfuehren - ueber die Kennung.
+  const openIndex = !open ? -1 : (() => {
+    const same = rows.indexOf(open.row);
+    if (same !== -1) return same;
+    return open.id !== '' && open.id != null ? rows.findIndex((r) => r[key] === open.id) : -1;
+  })();
+
+  useEffect(() => {
+    if (open && openIndex === -1) { setOpen(null); setGone(true); }
+  }, [open, openIndex]);
 
   const errors = useMemo(
     () => collectionErrors(collection, rows, { data, collections, original }),
     [collection, rows, data, collections, original],
   );
 
-  if (open && rows[open.index]) {
-    const entry = rows[open.index];
+  if (open && openIndex !== -1) {
+    const entry = rows[openIndex];
     const isNew = open.original === original ? open.isNew : isNewEntry(collection, entry, original);
     return (
       <EntryForm collection={collection} entry={entry} data={data} collections={collections} isNew={isNew} images={images}
-        onChange={(next) => onChange(rows.map((r, i) => (i === open.index ? next : r)))}
+        onChange={(next) => {
+          setOpen((o) => o && { ...o, id: next[key], row: next });
+          onChange(rows.map((r, i) => (i === openIndex ? next : r)));
+        }}
         onBack={() => setOpen(null)}
         planFor={planFor}
         onOpenEntry={onOpenEntry}
@@ -56,13 +73,15 @@ export default function CollectionView({
     .sort((a, b) => compare(collection, a.row, b.row));
 
   const create = () => {
-    onChange([...rows, newEntry(collection)]);
-    openEntry(rows.length, true);
+    const row = newEntry(collection);
+    onChange([...rows, row]);
+    openEntry(row, true);
   };
 
   return (
     <div className="collection-view">
       <h1>{collection.label}</h1>
+      {gone && <p role="status" className="note">Dieser Eintrag wurde inzwischen gelöscht.</p>}
       <p className="count">{rows.length === 1 ? '1 Eintrag' : `${rows.length} Einträge`}</p>
       <div className="list-tools">
         <label htmlFor="entry-search">Suchen</label>
@@ -72,7 +91,7 @@ export default function CollectionView({
       <ul className="entry-list">
         {shown.map(({ row, index }) => (
           <li key={index}>
-            <button type="button" onClick={() => openEntry(index, isNewEntry(collection, row, original))}>
+            <button type="button" onClick={() => openEntry(row, isNewEntry(collection, row, original))}>
               <span className="entry-title">{displayTitle(collection, row)}</span>
               {errors[row[keyOf(collection)]] && <span className="entry-error">Fehler</span>}
             </button>

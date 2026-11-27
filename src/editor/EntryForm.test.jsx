@@ -166,4 +166,58 @@ describe('CollectionView', () => {
     await act(async () => btn('Zurück zur Liste').click());
     expect(c.textContent).toContain('(ohne Titel)');
   });
+
+  // Final review I2: das offene Formular folgt dem Eintrag, nicht der Position in der Liste.
+  function Movable({ expose }) {
+    const [rows, setRows] = useState(initial);
+    expose.rows = rows;
+    expose.setRows = setRows;
+    return (
+      <CollectionView collection={categories} data={{ categories: rows }} original={{ categories: initial }}
+        collections={collections} onChange={setRows} />
+    );
+  }
+  const openTitled = async (c, title) => act(async () =>
+    [...c.querySelectorAll('.entry-list button')].find((b) => b.textContent.startsWith(title)).click());
+
+  it('Reihenfolge aendert sich bei offenem Formular: Eingaben gehen weiter an denselben Eintrag', async () => {
+    const x = {};
+    const c = await render(<Movable expose={x} />);
+    await openTitled(c, 'Alpha'); // Position 1
+    await act(async () => x.setRows((r) => [r[2], { id: 'n', label: 'Neu von B', color: '#112233' }, r[0], r[1]]));
+    expect(c.querySelector('input#field-label').value).toBe('Alpha');
+    await type(c.querySelector('input#field-label'), 'Alpha 2');
+    expect(x.rows.map((r) => r.label)).toEqual(['Beta', 'Neu von B', 'Zeta', 'Alpha 2']);
+  });
+  it('neuer Eintrag ohne Kennung: Formular bleibt bei ihm, auch wenn die Reihenfolge sich aendert', async () => {
+    const x = {};
+    const c = await render(<Movable expose={x} />);
+    await act(async () => [...c.querySelectorAll('button')].find((b) => b.textContent === 'Neu').click());
+    await act(async () => x.setRows((r) => [r[3], ...r.slice(0, 3)])); // Kennung noch leer
+    await type(c.querySelector('input#field-label'), 'Gamma');
+    expect(x.rows[0]).toEqual(expect.objectContaining({ id: 'gamma', label: 'Gamma' }));
+    await act(async () => x.setRows((r) => [...r.slice(1), r[0]])); // jetzt ueber die Kennung
+    await type(c.querySelector('input#field-label'), 'Gamma 2');
+    expect(x.rows.map((r) => r.label)).toEqual(['Zeta', 'Alpha', 'Beta', 'Gamma 2']);
+  });
+  it('neuer Eintrag mit doppelt getippter Kennung: Formular bleibt beim neuen Eintrag', async () => {
+    const x = {};
+    const c = await render(<Movable expose={x} />);
+    await act(async () => [...c.querySelectorAll('button')].find((b) => b.textContent === 'Neu').click());
+    // (querySelector findet die Felder hier nach den vorigen Tests nicht zuverlaessig - jsdom-Selektor-Cache)
+    const input = (id) => [...c.querySelectorAll('input')].find((i) => i.id === id);
+    await type(input('field-id'), 'a'); // gibt es schon (Alpha)
+    await type(input('field-label'), 'Doppelt');
+    expect(x.rows.map((r) => r.label)).toEqual(['Zeta', 'Alpha', 'Beta', 'Doppelt']);
+  });
+  it('offener Eintrag verschwindet (von jemand anderem geloescht): Formular zu, Hinweis', async () => {
+    const x = {};
+    const c = await render(<Movable expose={x} />);
+    await openTitled(c, 'Alpha');
+    await act(async () => x.setRows((r) => r.filter((row) => row.id !== 'a')));
+    expect(c.querySelector('input#field-label')).toBeNull();
+    const note = c.querySelector('[role="status"]');
+    expect(note?.textContent).toBe('Dieser Eintrag wurde inzwischen gelöscht.');
+    expect(x.rows.map((r) => r.label)).toEqual(['Zeta', 'Beta']);
+  });
 });
