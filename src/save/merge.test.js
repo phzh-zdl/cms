@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeCollections, mergePage, sameValue, mergeSite, applyChoices } from './merge.js';
+import { mergeCollections, mergePage, sameValue, mergeSite, applyChoices, keysUsable, UnmergeableError } from './merge.js';
 
 const a = { id: 'a', title: 'A' };
 const b = { id: 'b', title: 'B' };
@@ -128,5 +128,73 @@ describe('mergeSite + applyChoices', () => {
     const r2 = mergeSite(config, base, { data: { res: [{ ...a, title: 'M' }, b] }, pages: base.pages }, { data: { res: [b] }, pages: base.pages });
     expect(applyChoices(r2, ['mine']).data.res).toEqual([b, { id: 'a', title: 'M' }]);
     expect(applyChoices(r2, ['theirs']).data.res).toEqual([b]);
+  });
+});
+
+describe('mergeSite: je Datei zuerst als Ganzes', () => {
+  const config = {
+    collections: [
+      { id: 'res', label: 'Ressourcen', key: 'id', titleField: 'title' },
+      { id: 'cat', label: 'Fachbereiche', key: 'id', titleField: 'title' },
+    ],
+    pages: [],
+  };
+  const K1 = { title: 'ohne Kennung 1' };
+  const K2 = { title: 'ohne Kennung 2' };
+  const D1 = { id: 'x', title: 't1' };
+  const D2 = { id: 'x', title: 't2' };
+
+  it('unberuehrte Datei mit Eintraegen ohne/mit doppelter Kennung bleibt unveraendert', () => {
+    const base = { data: { res: [K1, K2, D1, D2], cat: [a] }, pages: {} };
+    const mine = { data: { res: [K1, K2, D1, D2], cat: [{ ...a, title: 'Mein A' }] }, pages: {} };
+    const theirs = { data: { res: [K1, K2, D1, D2], cat: [a, b] }, pages: {} };
+    const r = mergeSite(config, base, mine, theirs);
+    expect(r.conflicts).toEqual([]);
+    expect(r.data.res).toEqual([K1, K2, D1, D2]);
+    expect(r.data.cat).toEqual([{ ...a, title: 'Mein A' }, b]);
+  });
+
+  it('nur die anderen haben die Datei geaendert: deren Fassung als Ganzes (auch mit doppelten Kennungen)', () => {
+    const base = { data: { res: [K1, K2], cat: [a] }, pages: {} };
+    const theirs = { data: { res: [K2, K1, D1, D2], cat: [a] }, pages: {} };
+    const mine = { data: { res: [K1, K2], cat: [{ ...a, title: 'M' }] }, pages: {} };
+    expect(mergeSite(config, base, mine, theirs).data.res).toEqual([K2, K1, D1, D2]);
+  });
+
+  it('nur ich habe umsortiert, die anderen die Datei nicht beruehrt: Reihenfolge bleibt', () => {
+    const base = { data: { res: [a, b, c], cat: [a] }, pages: {} };
+    const mine = { data: { res: [c, a, b], cat: [a] }, pages: {} };
+    const theirs = { data: { res: [a, b, c], cat: [a, b] }, pages: {} };
+    expect(mergeSite(config, base, mine, theirs).data.res.map((e) => e.id)).toEqual(['c', 'a', 'b']);
+  });
+
+  it('gleich bis auf die Schluesselreihenfolge: die Fassung der anderen gilt', () => {
+    const theirsRows = [{ title: 'Neu', id: 'a' }];
+    const r = mergeSite(config, { data: { res: [a], cat: [] }, pages: {} },
+      { data: { res: [{ id: 'a', title: 'Neu' }], cat: [] }, pages: {} },
+      { data: { res: theirsRows, cat: [] }, pages: {} });
+    expect(r.data.res).toBe(theirsRows);
+    expect(mergeCollections([a], [{ id: 'a', title: 'Neu' }], theirsRows).merged[0]).toBe(theirsRows[0]);
+  });
+
+  it('beide geaendert, doppelte oder fehlende Kennung: nicht zusammenfuehren, eigener Fehler', () => {
+    const base = { data: { res: [D1, D2], cat: [] }, pages: {} };
+    const mine = { data: { res: [D1, D2, { id: 'm' }], cat: [] }, pages: {} };
+    const theirs = { data: { res: [D1, { id: 'y' }], cat: [] }, pages: {} };
+    let err;
+    try { mergeSite(config, base, mine, theirs); } catch (e) { err = e; }
+    expect(err).toBeInstanceOf(UnmergeableError);
+    expect(err.message).toBe('Die Datei „Ressourcen“ enthält Einträge ohne eindeutige Kennung und kann nicht automatisch zusammengeführt werden.');
+    const keyless = { data: { res: [a, K1], cat: [] }, pages: {} };
+    expect(() => mergeSite(config, { data: { res: [a], cat: [] }, pages: {} }, keyless, { data: { res: [b], cat: [] }, pages: {} }))
+      .toThrow(UnmergeableError);
+  });
+
+  it('keysUsable', () => {
+    expect(keysUsable([a, b], 'id')).toBe(true);
+    expect(keysUsable([a, { ...a }], 'id')).toBe(false);
+    expect(keysUsable([a, K1], 'id')).toBe(false);
+    expect(keysUsable([a, { id: '' }], 'id')).toBe(false);
+    expect(keysUsable(undefined, 'id')).toBe(true);
   });
 });

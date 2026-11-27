@@ -1,5 +1,6 @@
 // Entwuerfe im localStorage: cms.draft.<repo>.
-// state = { savedAt, baseSha, data, pages, removedFiles, newImages: [{ path, base64 }] }
+// state = { savedAt, baseSha, ancestor, data, pages, removedFiles, newImages: [{ path, base64 }] }
+// ancestor: siehe useSiteWorkingCopy (Vergleichsbasis fuer waehrend des Speicherns bearbeitete Dateien).
 const keyFor = (repo) => `cms.draft.${repo}`;
 
 // true = gesichert; false = ging nicht (z. B. Speicher voll) - Arbeiten geht trotzdem weiter.
@@ -21,6 +22,7 @@ export function loadDraft(repo) {
     return {
       savedAt: d.savedAt,
       baseSha: d.baseSha ?? null,
+      ancestor: d.ancestor && typeof d.ancestor === 'object' ? d.ancestor : null,
       data: d.data,
       pages: d.pages ?? {},
       removedFiles: Array.isArray(d.removedFiles) ? d.removedFiles : [],

@@ -221,4 +221,73 @@ describe('SiteEditor: gleichzeitige Aenderungen', () => {
     expect(c.textContent).toContain('Ungespeicherte Änderungen');
     expect(loadDraft('o/r').data.categories[0].label).toBe('Natur und Technik');
   });
+
+  it('beide geaendert, Datei der anderen mit doppelter Kennung: nichts gespeichert, Entwurf bleibt', async () => {
+    const client = repoClient({
+      head: 'head1',
+      contents: { head1: { [PATH]: serializeJson([NATUR, KUNST, { id: 'kunst', label: 'Kunst doppelt' }]) } },
+    });
+    const c = await render(<SiteEditor site={makeSite()} client={client} onBack={() => {}} />);
+    await openEntry(c, 'Natur');
+    await type(c.querySelector('#field-label'), 'Natur und Technik');
+    await click(button(c, 'Speichern'));
+    expect(c.querySelector('[role="dialog"]')).toBeNull();
+    expect(commits(client)).toHaveLength(0);
+    expect(c.querySelector('[role="alert"]').textContent).toBe('Die Datei „Fachbereiche“ enthält Einträge ohne eindeutige Kennung und kann nicht automatisch zusammengeführt werden. Ihre Änderungen sind als Entwurf gesichert.');
+    expect(loadDraft('o/r').data.categories[0].label).toBe('Natur und Technik');
+    expect(c.textContent).toContain('Ungespeicherte Änderungen');
+  });
+
+  it('waehrend des Speicherns bearbeitet: naechstes Speichern fragt nach statt still zu ueberschreiben', async () => {
+    const client = repoClient({
+      head: 'head1',
+      contents: { head1: { [PATH]: serializeJson([{ id: 'natur', label: 'Natur (neu)' }, KUNST]) } },
+    });
+    // Laden des neuen Stands haengt, bis release() aufgerufen wird
+    let release;
+    const held = new Promise((r) => { release = r; });
+    const getFileText = client.getFileText;
+    client.getFileText = async (...a) => { await held; return getFileText(...a); };
+
+    const c = await render(<SiteEditor site={makeSite()} client={client} onBack={() => {}} />);
+    await openEntry(c, 'Kunst');
+    await type(c.querySelector('#field-label'), 'Kunst und Musik');
+    await click(button(c, 'Zurück zur Liste'));
+    await openEntry(c, 'Natur');
+    await click(button(c, 'Speichern'));
+    await type(c.querySelector('#field-label'), 'Natur von mir'); // waehrend des Speicherns
+    await act(async () => release());
+
+    expect(c.querySelector('[role="dialog"]')).toBeNull();
+    expect(commits(client)).toHaveLength(1);
+    expect(lastSaved(client)).toEqual([{ id: 'natur', label: 'Natur (neu)' }, { id: 'kunst', label: 'Kunst und Musik' }]);
+    expect(c.querySelector('#field-label').value).toBe('Natur von mir');
+    expect(c.textContent).toContain('Ungespeicherte Änderungen');
+
+    await click(button(c, 'Speichern'));
+    const dlg = c.querySelector('[role="dialog"]');
+    expect(dlg).not.toBeNull();
+    expect(dlg.textContent).toContain('Name: Natur von mir');
+    expect(dlg.textContent).toContain('Name: Natur (neu)');
+    expect(commits(client)).toHaveLength(1);
+    await click(button(c, 'Meine Version übernehmen'));
+    expect(commits(client)).toHaveLength(2);
+    expect(commits(client)[1][4]).toBe('commit1');
+    expect(lastSaved(client)).toEqual([{ id: 'natur', label: 'Natur von mir' }, { id: 'kunst', label: 'Kunst und Musik' }]);
+  });
+
+  it('Entwurf mit Vergleichsbasis vom Klick: nach dem Wiederherstellen wird ebenfalls nachgefragt', async () => {
+    localStorage.setItem('cms.draft.o/r', JSON.stringify({
+      savedAt: '2026-11-27T10:00:00.000Z', baseSha: 'head0',
+      ancestor: { data: { categories: [NATUR, KUNST] }, pages: {} },
+      data: { categories: [{ id: 'natur', label: 'Natur von mir' }, KUNST] }, pages: {}, removedFiles: [], newImages: [],
+    }));
+    const client = repoClient({ contents: {} });
+    const site = makeSite([{ id: 'natur', label: 'Natur (neu)' }, KUNST], 'head0');
+    const c = await render(<SiteEditor site={site} client={client} onBack={() => {}} />);
+    await click(button(c, 'Wiederherstellen'));
+    await click(button(c, 'Speichern'));
+    expect(c.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(commits(client)).toHaveLength(0);
+  });
 });

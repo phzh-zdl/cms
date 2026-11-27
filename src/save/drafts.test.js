@@ -6,6 +6,7 @@ beforeEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
 const state = {
   savedAt: '2026-11-27T10:00:00.000Z',
   baseSha: 'abc',
+  ancestor: { data: { resources: [{ id: 'r1', title: 'A' }] }, pages: {} },
   data: { resources: [{ id: 'r1', title: 'Ä' }] },
   pages: { impressum: { body: 'x' } },
   removedFiles: ['img/old.png'],

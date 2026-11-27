@@ -9,6 +9,7 @@ import { useSiteWorkingCopy } from '../save/useSiteWorkingCopy.js';
 import { useDraftAutosave } from '../save/useDraftAutosave.js';
 import { loadDraft, clearDraft, settleDraftAfterSave } from '../save/drafts.js';
 import { useConflictSave, MSG_BUSY, MSG_CANCELLED } from '../save/useConflictSave.js';
+import { UnmergeableError } from '../save/merge.js';
 
 const DRAFT_OK = 'Ihre Änderungen sind als Entwurf gesichert.';
 const DRAFT_FAILED = 'Ihre Änderungen konnten nicht als Entwurf gesichert werden – bitte diese Seite nicht schliessen.';
@@ -20,6 +21,7 @@ const draftDate = (iso) => new Date(iso).toLocaleString('de-CH', { dateStyle: 'm
 function errorText(e, drafted) {
   const draftNote = drafted ? DRAFT_OK : DRAFT_FAILED;
   if (e instanceof AuthError) return `${MSG_AUTH} ${draftNote}`;
+  if (e instanceof UnmergeableError) return `${e.message} ${draftNote}`;
   if (e instanceof GitHubError) return drafted ? e.message : `${e.message} ${DRAFT_FAILED}`;
   return `Speichern fehlgeschlagen. ${draftNote}`;
 }
@@ -92,9 +94,8 @@ export default function SiteEditor({ site, client, onBack }) {
     }
     wc.markSaved(sha, snapshot);
     const l = latest.current;
-    // Nach dem Zusammenfuehren steht ggf. noch der Stand vom Klick in latest (noch nicht neu gezeichnet).
-    const same = (now, saved, clicked) => now === saved || now === clicked;
-    const untouched = same(l.data, snapshot.data, work.data) && same(l.pages, snapshot.pages, work.pages)
+    const now = wc.peek(); // sofort aktuell, auch wenn nach dem Zusammenfuehren noch nicht neu gezeichnet
+    const untouched = now.data === snapshot.data && now.pages === snapshot.pages
       && l.removedFiles === snapshot.removedFiles && l.newImages === snapshot.newImages;
     // Wurde waehrend des Speicherns weiter bearbeitet, sichert die Autosave-Logik den neuen Stand.
     if (untouched) clearDraft(site.repo);

@@ -23,6 +23,7 @@ export function useDraftAutosave(repo, wc, enabled) {
     const ok = saveDraft(repo, {
       savedAt: new Date().toISOString(),
       baseSha: w.base.headSha,
+      ancestor: w.base.ancestor ?? null,
       data: w.data,
       pages: w.pages,
       removedFiles: w.removedFiles,
@@ -36,7 +37,7 @@ export function useDraftAutosave(repo, wc, enabled) {
     if (!enabled) return undefined;
     const t = setTimeout(write, DELAY_MS);
     return () => clearTimeout(t);
-  }, [repo, wc.changes, wc.base.headSha, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [repo, wc.changes, wc.base.headSha, wc.base.ancestor, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Beim Verlassen des Editors nichts verlieren.
   useEffect(() => () => {

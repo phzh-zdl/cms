@@ -43,9 +43,17 @@ export function useConflictSave(site, client, wc) {
   });
 
   // Eigenen Stand mit dem aktuellen Stand auf main zusammenfuehren. null = abgebrochen.
+  // Vergleichsbasis = Inhalt bei base.headSha, fuer waehrend eines Speicherns bearbeitete Dateien
+  // der Stand vom Klick (base.ancestor). Wirft UnmergeableError.
   async function mergeOnto(base, mine, head) {
-    const ancestor = base.contentSha === base.headSha ? base : await loadContentAt(client, repo, config, base.headSha);
-    const theirs = await loadContentAt(client, repo, config, head);
+    const content = base.contentSha === base.headSha ? base : await loadContentAt(client, repo, config, base.headSha);
+    const ancestor = {
+      data: { ...content.data, ...base.ancestor?.data },
+      pages: { ...content.pages, ...base.ancestor?.pages },
+    };
+    const theirs = head === base.contentSha
+      ? { original: base.original, data: base.data, pages: base.pages }
+      : await loadContentAt(client, repo, config, head);
     const result = mergeSite(config, ancestor, mine, theirs);
     let merged = result;
     if (result.conflicts.length > 0) {
@@ -65,8 +73,9 @@ export function useConflictSave(site, client, wc) {
     let mine = { data, pages };
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const head = await client.getRef(repo, BRANCH);
-      if (head !== base.headSha) {
-        await announce();
+      const moved = head !== base.headSha;
+      if (moved || base.ancestor) {
+        if (moved) await announce();
         const next = await mergeOnto(base, mine, head);
         if (!next) return { status: 'cancelled' };
         wc.rebase(next.base, mine, next.mine);

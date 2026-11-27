@@ -11,9 +11,32 @@ function stable(value) {
 }
 export const sameValue = (a, b) => JSON.stringify(stable(a)) === JSON.stringify(stable(b));
 
+// Lassen sich die Eintraege eindeutig ueber ihre Kennung zuordnen? (keine fehlende, keine doppelte)
+export function keysUsable(rows, key = 'id') {
+  if (rows === undefined) return true;
+  if (!Array.isArray(rows)) return false;
+  const seen = new Set();
+  for (const r of rows) {
+    const k = r && typeof r === 'object' ? r[key] : undefined;
+    if (k === undefined || k === null || k === '' || seen.has(k)) return false;
+    seen.add(k);
+  }
+  return true;
+}
+
+// Beide Seiten haben eine Datei geaendert, deren Eintraege sich nicht eindeutig zuordnen lassen.
+export class UnmergeableError extends Error {
+  constructor(label) {
+    super(`Die Datei „${label}“ enthält Einträge ohne eindeutige Kennung und kann nicht automatisch zusammengeführt werden.`);
+    this.name = 'UnmergeableError';
+    this.label = label;
+  }
+}
+
 // Ergebnis fuer einen Eintrag/eine Seite: { value } oder { conflict: true }. undefined = nicht vorhanden.
+// Gleich (auch nur bis auf die Feldreihenfolge): die Fassung der anderen, damit nichts unnoetig neu geschrieben wird.
 function pick(base, mine, theirs) {
-  if (sameValue(mine, theirs)) return { value: mine };
+  if (sameValue(mine, theirs)) return { value: theirs };
   if (sameValue(mine, base)) return { value: theirs };
   if (sameValue(theirs, base)) return { value: mine };
   return { conflict: true };
@@ -49,6 +72,9 @@ export function mergePage(base, mine, theirs) {
 }
 
 // Ganze Seite: alle Sammlungen und Textseiten. Liefert { data, pages, conflicts, keys }.
+// Je Datei zuerst als Ganzes: hat nur eine Seite sie geaendert, gilt deren Fassung unveraendert
+// (auch Reihenfolge und Eintraege ohne Kennung). Nur wenn beide sie geaendert haben, wird je
+// Eintrag zusammengefuehrt - das setzt eindeutige Kennungen voraus (sonst UnmergeableError).
 // conflicts: { kind: 'collection', collectionId, id, mine, theirs } | { kind: 'page', pageId, mine, theirs }
 export function mergeSite(config, base, mine, theirs) {
   const data = {};
@@ -58,7 +84,14 @@ export function mergeSite(config, base, mine, theirs) {
   for (const c of config.collections) {
     const key = c.key ?? 'id';
     keys[c.id] = key;
-    const r = mergeCollections(base.data?.[c.id], mine.data?.[c.id], theirs.data?.[c.id], key);
+    const [b, m, t] = [base.data?.[c.id], mine.data?.[c.id], theirs.data?.[c.id]];
+    const whole = pick(b, m, t);
+    if (!whole.conflict) {
+      if (whole.value !== undefined) data[c.id] = whole.value;
+      continue;
+    }
+    if (![b, m, t].every((rows) => keysUsable(rows, key))) throw new UnmergeableError(c.label ?? c.id);
+    const r = mergeCollections(b, m, t, key);
     data[c.id] = r.merged;
     for (const x of r.conflicts) conflicts.push({ kind: 'collection', collectionId: c.id, ...x });
   }
