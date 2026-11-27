@@ -250,8 +250,7 @@ noch nicht angebunden). Dafür muss das CMS erweitert werden; vorgesehen ist:
   gilt nur für den OER-Katalog.
 - Impuls ist kein React-Projekt (Vanilla-JS). Das ist für das CMS egal: Es bearbeitet nur Dateien,
   die Seite muss lediglich ihre Inhalte wie in Teil 1 aus Dateien laden.
-- Der Name des CMS („OER-Inhalte bearbeiten") ist ein Platzhalter und wird angepasst, sobald
-  weitere Seiten dazukommen.
+- Der Name des CMS ist „ZDL CMS" (Anmeldeseite, Titel der Seite und Dokumente); er ist nicht an den OER-Katalog gebunden.
 
 ## 8. Lokal starten und testen
 

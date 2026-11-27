@@ -1,4 +1,4 @@
-# Barrierefreiheit (e-Accessibility) — CMS
+# Barrierefreiheit (e-Accessibility) — ZDL CMS
 
 Stand: 2026-11-27 · Massstab: **WCAG 2.1, Stufe AA** (wie beim OER-Katalog, siehe dessen
 `docs/BARRIEREFREIHEIT.md`) · Gilt für das CMS-Werkzeug selbst (Anmeldung, Seitenauswahl,

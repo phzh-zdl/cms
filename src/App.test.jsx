@@ -26,7 +26,7 @@ function render(ui) {
 describe('App', () => {
   it('renders the login screen when no token is stored', () => {
     const el = render(<App />);
-    expect(el.querySelector('h1').textContent).toBe('OER-Inhalte bearbeiten');
+    expect(el.querySelector('h1').textContent).toBe('ZDL CMS');
     const input = el.querySelector('input#token');
     expect(input).not.toBeNull();
     expect(el.querySelector(`label[for="${input.id}"]`).textContent).toBe('Zugangsschlüssel');

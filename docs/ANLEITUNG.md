@@ -1,4 +1,4 @@
-# Anleitung: Inhalte der PHZH-Webseiten bearbeiten
+# Anleitung ZDL CMS: Inhalte der ZDL-Webseiten bearbeiten
 
 Diese Anleitung ist für Teammitglieder, die Inhalte (zum Beispiel im OER-Katalog) pflegen.
 Du brauchst nichts zu installieren, nur einen Browser (Chrome, Edge, Firefox oder Safari)
@@ -51,8 +51,8 @@ Nimm sie an.
 ## 2. Zwei-Faktor-Anmeldung einrichten
 
 Zwei-Faktor heisst: Zum Passwort kommt ein zweiter Nachweis, zum Beispiel ein Code aus einer
-App auf deinem Handy. Das schützt dein Konto, auch wenn jemand dein Passwort kennt. Die
-Organisation verlangt es von allen Mitgliedern.
+App auf deinem Handy. Das schützt dein Konto, auch wenn jemand dein Passwort kennt.
+Zwei-Faktor ist für die Arbeit im ZDL CMS vorgesehen; bitte richte es ein.
 
 1. Klicke auf github.com oben rechts auf dein Profilbild → **Settings**.
 2. Links: **Password and authentication**.

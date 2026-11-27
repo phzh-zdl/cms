@@ -1,7 +1,7 @@
-# CMS für den PHZH-OER-Katalog
+# ZDL CMS
 
-Browserbasiertes CMS (Vite + React, statisch, auf GitHub Pages), mit dem die Inhalte
-des OER-Katalogs über die GitHub-API bearbeitet werden. Es gibt keinen eigenen Server und keine
+Browserbasiertes CMS (Vite + React, statisch, auf GitHub Pages) für die Inhalte der ZDL-Webseiten,
+zuerst des OER-Katalogs. Bearbeitet wird über die GitHub-API. Es gibt keinen eigenen Server und keine
 Datenbank; die einzige externe Verbindung ist `https://api.github.com`. Die Oberfläche ist deutsch
 und verwendet kein Git-Vokabular.
 

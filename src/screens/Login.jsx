@@ -31,7 +31,8 @@ export default function Login({ onLogin, createClientImpl = createClient }) {
 
   return (
     <main className="login">
-      <h1>OER-Inhalte bearbeiten</h1>
+      <h1>ZDL CMS</h1>
+      <p>Inhalte der ZDL-Webseiten bearbeiten</p>
       <form onSubmit={handleSubmit} noValidate>
         <label htmlFor="token">Zugangsschlüssel</label>
         <input

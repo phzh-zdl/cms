@@ -1,4 +1,4 @@
-# Sicherheit und Datenschutz des CMS
+# Sicherheit und Datenschutz des ZDL CMS
 
 Dieses Dokument richtet sich an den Sicherheitsausschuss. Es beschreibt in einfacher Sprache,
 wie das CMS (Werkzeug zum Bearbeiten von Webseiten-Inhalten) funktioniert, wer worauf
@@ -11,7 +11,7 @@ Fachbegriffe werden beim ersten Auftreten in einem Satz erklärt.
   keinen eigenen Server, keine eigene Datenbank und keine eigenen Benutzerkonten oder Passwörter.
 - Die Inhalte liegen in **privaten Repositories** (Ordner mit Änderungsverlauf) der
   Organisation `phzh-zdl` bei GitHub. Wer ändern darf, bestimmt GitHub (Team-Mitgliedschaft,
-  Zwei-Faktor-Pflicht, Voraussetzung, siehe Abschnitt 9).
+  Zwei-Faktor-Pflicht; diese Einstellung ist noch einzurichten, siehe Abschnitt 9).
 - Das CMS verbindet sich **ausschliesslich mit `api.github.com`**. Alles andere blockiert der
   Browser.
 - Jede Änderung ist mit Person und Zeit nachvollziehbar und lässt sich zurücknehmen.
@@ -119,7 +119,7 @@ verwaltet, mit Ablaufdatum und Kalendererinnerung zur Erneuerung.
 
 | Risiko | Was könnte passieren | Gegenmassnahme | Restrisiko |
 |---|---|---|---|
-| **Schlüssel gestohlen** (Malware, fremder Zugriff aufs Gerät, weitergegeben) | Fremde ändern oder löschen Inhalte der freigegebenen Repos | Schlüssel eng begrenzt (nur Inhalte, nur ausgewählte Repos), läuft nach 90 Tagen ab, sofort widerrufbar; Zwei-Faktor (sobald als Pflicht eingestellt, Abschnitt 9) schützt das Konto selbst; Standard ist „nur diese Sitzung" statt dauerhaft | Bis zum Widerruf kann der Schlüssel genutzt werden |
+| **Schlüssel gestohlen** (Malware, fremder Zugriff aufs Gerät, weitergegeben) | Fremde ändern oder löschen Inhalte der freigegebenen Repos | Schlüssel eng begrenzt (nur Inhalte, nur ausgewählte Repos), läuft nach der eingestellten Laufzeit ab (empfohlen 90 Tage, Abschnitt 9), sofort widerrufbar; Zwei-Faktor (sobald als Pflicht eingestellt, Abschnitt 9) schützt das Konto selbst; Standard ist „nur diese Sitzung" statt dauerhaft | Bis zum Widerruf kann der Schlüssel genutzt werden |
 | **Schadcode im CMS** (Cross-Site-Scripting: fremder Code wird in die Seite eingeschleust und könnte den Schlüssel lesen) | Schlüssel wird abgegriffen | Strenge Inhaltsregel des Browsers (CSP): nur eigener Code darf laufen, Verbindungen nur zu `api.github.com`, damit kann nichts an einen fremden Server gesendet werden; Inhalte werden nie als HTML angezeigt, ausser bereinigtem formatiertem Text (Bereinigungsfilter lässt nur eine feste Liste harmloser Elemente zu, keine Skripte); alle Bausteine im Code gebündelt, nichts wird von fremden Servern nachgeladen; automatische Prüfung der Bausteine auf bekannte Sicherheitslücken: Dependabot öffnet wöchentlich (npm) bzw. monatlich (GitHub Actions) Änderungsvorschläge, und bei jedem Push prüft `npm audit` auf schwere Lücken (nur npm-Bausteine) | Eine unbekannte Lücke in einem Baustein bleibt möglich; die Massnahmen verkleinern den Schaden |
 | **Gleichzeitiges Bearbeiten** | Zwei Personen überschreiben sich | CMS speichert nie über fremde Änderungen hinweg: Es lädt den neuen Stand, führt Einträge zusammen, die nur eine Person geändert hat, und zeigt bei denselben Einträgen beide Fassungen zur Wahl | Eine falsche Wahl im Dialog; dann hilft der Verlauf |
 | **Versehentliches Löschen** | Eintrag oder Bild fehlt | Jede Änderung ist im Verlauf festgehalten und lässt sich wiederherstellen; nächtliche Sicherungskopie; Löschen mit Rückfrage und Hinweis auf betroffene Einträge | Bis zu ein Tag Änderungen, falls Verlauf und Original zugleich beschädigt würden |

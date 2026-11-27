@@ -12,7 +12,7 @@ describe('renderAnleitung', () => {
     expect(html).toMatch(/^<!doctype html>/i);
     expect(html).toContain('<html lang="de">');
     expect(html).toContain('<meta name="viewport"');
-    expect(html).toContain('<title>Anleitung</title>');
+    expect(html).toContain('<title>Anleitung – ZDL CMS</title>');
   });
 
   it('behält den Anker für den Link im Login', () => {
@@ -30,7 +30,7 @@ describe('renderAnleitung', () => {
   });
 
   it('hat einen Titel auch ohne Überschrift', () => {
-    expect(renderAnleitung('nur Text')).toContain('<title>Anleitung</title>');
+    expect(renderAnleitung('nur Text')).toContain('<title>Anleitung – ZDL CMS</title>');
   });
 
   it('entfernt Bild-Platzhalter nicht, verweist aber relativ', () => {
@@ -55,5 +55,17 @@ describe('renderAnleitung', () => {
   it('erlaubt nur Sprungmarken als rohes HTML', () => {
     expect(renderAnleitung('<a id="x"></a>\n\n## T\n')).toContain('<a id="x"></a>');
     expect(renderAnleitung('<a href="javascript:alert(1)">k</a>')).not.toMatch(/<a href="javascript/);
+  });
+
+  it('rendert nur sichere Links als Link', () => {
+    for (const bad of ['javascript:alert(1)', 'data:text/html,x', 'vbscript:x', 'http://phzh.ch', 'JaVaScript:alert(1)']) {
+      const out = renderAnleitung('[l](' + bad + ')');
+      expect(out, bad).not.toMatch(/<a [^>]*href/i);
+      expect(out, bad).toContain('l');
+    }
+    expect(renderAnleitung('[l](https://phzh.ch)')).toContain('<a href="https://phzh.ch">l</a>');
+    expect(renderAnleitung('[l](#zugangsschluessel)')).toContain('<a href="#zugangsschluessel">l</a>');
+    expect(renderAnleitung('[l](./x.html)')).toContain('href="./x.html"');
+    expect(renderAnleitung('[l](mailto:a@b.ch)')).toContain('href="mailto:a@b.ch"');
   });
 });

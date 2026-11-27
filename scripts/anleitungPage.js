@@ -30,7 +30,18 @@ const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace
 // Rohes HTML im Markdown wird als Text ausgegeben; einzige Ausnahme: Sprungmarken <a id="name"></a>.
 // (Block oder Inline: marked liefert <a id="x"> und </a> teils einzeln.)
 const ANCHOR = /^\s*(<a id="[a-z0-9-]+">|<\/a>|<a id="[a-z0-9-]+"><\/a>)\s*$/;
-const marked = new Marked({ renderer: { html: ({ text }) => (ANCHOR.test(text) ? text : escapeHtml(text)) } });
+// Links: nur https:, mailto: und relative Ziele (ohne Schema); alles andere wird zu Text.
+const SAFE_HREF = /^(https:|mailto:|(?!\/\/)[^:]*$)/i;
+const renderer = {
+  html: ({ text }) => (ANCHOR.test(text) ? text : escapeHtml(text)),
+  link({ href, title, tokens }) {
+    const text = this.parser.parseInline(tokens);
+    if (!SAFE_HREF.test(String(href ?? '').trim())) return text;
+    const t = title ? ` title="${escapeHtml(title)}"` : '';
+    return `<a href="${escapeHtml(href)}"${t}>${text}</a>`;
+  },
+};
+const marked = new Marked({ renderer });
 
 export function renderAnleitung(markdown) {
   const body = marked.parse(markdown, { async: false });
@@ -40,7 +51,7 @@ export function renderAnleitung(markdown) {
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="${escapeHtml(CSP)}">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anleitung</title>
+<title>Anleitung – ZDL CMS</title>
 <style>${STYLE}</style>
 </head>
 <body>

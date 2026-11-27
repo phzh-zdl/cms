@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Browserbasiertes CMS für den PHZH-OER-Katalog",
+  "description": "ZDL CMS: browserbasiertes CMS für die Inhalte der ZDL-Webseiten",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
