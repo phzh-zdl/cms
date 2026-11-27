@@ -104,3 +104,14 @@ h1 { font-family: var(--f-display); font-weight: 800; margin: 0 0 1rem; }
   background: var(--surface);
 }
 .login input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ───── Seitenauswahl und Editor-Gerüst ───── */
+.site-list, .editor-main { padding: 0 16px; }
+.site-list ul, .editor-side ul { list-style: none; margin: 0; padding: 0; }
+.site-list li { margin-bottom: 0.5rem; }
+.editor { display: flex; gap: 1.5rem; }
+.editor-side { flex: 0 0 16rem; padding: 0 16px; }
+.editor-side nav button { display: block; width: 100%; text-align: left; }
+.editor-side nav button[aria-current="page"] { font-weight: 800; }
+.editor-side h2 { font-size: 1rem; margin: 1rem 0 0.25rem; }
+.site-name { font-weight: 800; }
