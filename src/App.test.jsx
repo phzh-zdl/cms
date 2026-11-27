@@ -45,6 +45,19 @@ describe('App', () => {
     expect(el.querySelector('input#token')).not.toBeNull();
   });
 
+  it('logout deletes the preview cache', async () => {
+    sessionStorage.setItem('cms.token', 'stored');
+    const del = vi.fn(async () => true);
+    vi.stubGlobal('caches', { delete: del });
+    const el = render(<App />);
+    await act(async () => {});
+    await act(async () => {
+      [...el.querySelectorAll('button')].find((b) => b.textContent === 'Abmelden').click();
+    });
+    expect(del).toHaveBeenCalledWith('zdl-vorschau');
+    vi.unstubAllGlobals();
+  });
+
   it('drops an invalid stored token and shows the login', async () => {
     localStorage.setItem('cms.token', 'stale');
     createClient.mockImplementationOnce(() => ({ getUser: async () => { throw new AuthError(401); } }));

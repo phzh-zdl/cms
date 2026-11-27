@@ -42,9 +42,10 @@ das Repo mit der Fehlermeldung).
 | `src/save/` | Speichern und Zusammenführen: `saveChanges.js` (Git Data API), `merge.js` (Drei-Wege), `ancestor.js` (Vergleichsbasis), `drafts.js` + `useDraftAutosave.js` (Entwürfe), `serialize.js` (Dateiformat), `commitMessage.js`, Hooks `useSiteWorkingCopy`, `useConflictSave` |
 | `src/images/` | Bild-Pipeline: `detect.js` (Magic Bytes), `CropDialog.jsx` (5:3-Zuschnitt, „Ganzes Bild zeigen"), `encode.js` (WebP, max. 800 px, Qualität 0.8) |
 | `src/richtext/` | Rich-Text: `sanitize.js` (DOMPurify, Allowlist), `safeHttps.js`, `linkTarget.js`, Werkzeugleiste und Link-Formulare |
-| `src/export/` | `buildZip.js` (ZIP im Browser mit `fflate`), `download.js` |
+| `src/export/` | `buildZip.js` (ZIP im Browser mit `fflate`), `shell.js` (Hülle laden, gemeinsam mit der Vorschau), `download.js` |
+| `src/preview/`, `public/vorschau/` | Vorschau: `files.js` (Dateien aus dem Arbeitsstand), `cache.js` (Cache Storage); `sw.js` + `handler.js` (Service Worker, reines JS ohne Build) |
 | `src/history/` | `history.js`, letzte Änderungen als Liste |
-| `src/screens/` | `Login`, `SiteList`, `SiteEditor`, `ExportPanel`, `HistoryPanel` |
+| `src/screens/` | `Login`, `SiteList`, `SiteEditor`, `ExportPanel`, `HistoryPanel`, `PreviewPanel` |
 | `src/styles.css`, `src/assets/fonts/` | Styles mit Tokens, Hausschrift MarkWeb (lokal, kein CDN) |
 | `scripts/` | `check-workflows.mjs` (Workflow-Struktur), `simulate-mirror.sh`, `contrast.mjs` (WCAG-Kontraste), `anleitungPage.js` (Vite-Plugin) |
 | `backup/` | Dateien für das separate Backup-Repo (siehe „Deployment und Sicherung") |
@@ -115,6 +116,29 @@ Zeilenumbruch und unveränderter Feldreihenfolge (`serialize.js`), damit Diffs m
 - **Inhalte:** alle Dateien unter `contentRoot/` aus `main`, im ZIP unter `content/`.
 - Der Export ist nur freigegeben, wenn nichts ungespeichert ist. Dateiname:
   `<zipName>-<YYYY-MM-DD>.zip`. Fehlt der Zweig, erscheint „Die Seite wurde noch nicht gebaut.".
+
+### Vorschau
+
+Der Knopf „Vorschau (neues Fenster)" zeigt die fertige Seite mit dem **aktuellen Arbeitsstand,
+auch ungespeichert**. Kein Server, nichts wird veröffentlicht.
+
+1. `PreviewPanel` (`src/screens/`) registriert den Service Worker `public/vorschau/sw.js`
+   (Scope `./vorschau/`; das Skript liegt im Scope, weil GitHub Pages keinen
+   `Service-Worker-Allowed`-Header setzen kann) und wartet, bis er aktiv ist (`skipWaiting` und
+   `clients.claim()`, damit die erste Vorschau ohne Neuladen klappt). `serviceWorker.ready` taugt
+   hier nicht: es bezieht sich auf den Scope der Seite, nicht auf `./vorschau/`.
+2. `buildPreviewFiles` (`src/preview/files.js`) stellt die Dateien zusammen: Hülle des Zweigs
+   `export.shell` (gemeinsamer Code mit dem Export in `src/export/shell.js`, 6er-Pool, im
+   Speicher pro Build-Stand zwischengespeichert), Inhalte aus dem Arbeitsstand mit `serializeJson`
+   (dieselbe Funktion wie beim Speichern), Bilder: gespeicherte aus dem Stand `base.headSha`
+   (nur die genutzten), neu hochgeladene direkt aus `newImages`. In jede HTML-Datei kommt ein
+   Hinweisband.
+3. `fillPreviewCache` (`src/preview/cache.js`) leert den Cache `zdl-vorschau` und legt die Dateien
+   unter `<Basis>/vorschau/<repo-name>/<Pfad>` ab. Das Fenster öffnet `…/index.html`.
+4. Der Service Worker (Logik in `public/vorschau/handler.js`, Tests in `src/preview/`) liefert nur aus
+   dem Cache (sonst 404 „Diese Datei ist in der Vorschau nicht enthalten.") und setzt auf jede
+   Antwort eine CSP ohne `api.github.com` sowie `Cache-Control: no-store`.
+5. Beim Abmelden löscht `App.jsx` den Cache (`clearPreviewCache`).
 
 ## 4. Sicherheitsrelevante Bausteine
 

@@ -23,6 +23,7 @@ mit Abschnitt 5 los.
 11. [Gleichzeitige Änderung lösen](#konflikt)
 12. [Exportieren und ZIP ans Webcenter schicken](#export)
 13. [Verlauf ansehen](#verlauf)
+14. [Vorschau ansehen](#vorschau)
 
 <a id="konto"></a>
 
@@ -327,6 +328,31 @@ Eintrag. Alle früheren Stände sind erhalten und zusätzlich gibt es jede Nacht
 Sicherungskopie.
 
 ![Screenshot: Verlauf](bilder/verlauf.png)
+
+<a id="vorschau"></a>
+
+## 14. Vorschau ansehen
+
+Du willst sehen, wie die fertige Seite mit deinen Änderungen aussieht, bevor du speicherst
+oder exportierst? Dafür gibt es die Vorschau. Sie zeigt auch Änderungen, die du noch nicht
+gespeichert hast. Es wird nichts veröffentlicht und nichts gespeichert.
+
+1. Klicke links unter **Veröffentlichen** auf **Vorschau (neues Fenster)**.
+2. Es erscheint „Vorschau wird vorbereitet … 12 von 40". Beim ersten Mal dauert das einen
+   Moment, danach geht es schneller.
+3. Die Vorschau öffnet sich in einem neuen Fenster. Hat dein Browser das Fenster
+   blockiert, klicke auf den Link **Vorschau öffnen**.
+
+*Du müsstest jetzt* die fertige Seite sehen, mit einem magentafarbenen Band ganz oben:
+„Vorschau – enthält ungespeicherte Änderungen. Nicht veröffentlicht." (bzw. „Vorschau des
+gespeicherten Stands. Nicht veröffentlicht.", wenn alles gespeichert ist).
+
+Hast du danach weiter bearbeitet, klicke im CMS auf **Vorschau neu erstellen**. Das offene
+Vorschau-Fenster zeigt immer den Stand vom letzten Erstellen. Beim Abmelden werden die
+Vorschau-Daten auf deinem Gerät gelöscht.
+
+Erscheint „Die Vorschau ist in diesem Browser nicht verfügbar", exportiere stattdessen das
+ZIP (Abschnitt 12) und sieh es dir an.
 
 ## Wenn etwas nicht klappt
 

@@ -14,6 +14,7 @@ import { useConflictSave, MSG_BUSY, MSG_CANCELLED } from '../save/useConflictSav
 import { UnmergeableError } from '../save/merge.js';
 import ExportPanel from './ExportPanel.jsx';
 import HistoryPanel from './HistoryPanel.jsx';
+import PreviewPanel from './PreviewPanel.jsx';
 
 const DRAFT_OK = 'Ihre Änderungen sind als Entwurf gesichert.';
 const DRAFT_FAILED = 'Ihre Änderungen konnten nicht als Entwurf gesichert werden – bitte diese Seite nicht schliessen.';
@@ -41,9 +42,10 @@ export default function SiteEditor({ site, client, onBack }) {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState(null);
   const [blockRequested, setBlockRequested] = useState(false);
+  const [previewRun, setPreviewRun] = useState(0); // jeder Klick auf "Vorschau" startet eine neue Vorbereitung
   // Neuester Arbeitsstand und ob der Editor noch offen ist - fuer das Ende eines Speichervorgangs.
   const latest = useRef();
-  latest.current = { data, pages, removedFiles, newImages };
+  latest.current = { data, pages, removedFiles, newImages, dirty };
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [current, setCurrent] = useState(() =>
@@ -174,6 +176,10 @@ export default function SiteEditor({ site, client, onBack }) {
             <h2 className="nav-heading" id="nav-veroeffentlichen">Veröffentlichen</h2>
             <ul aria-labelledby="nav-veroeffentlichen">
               <li>
+                <button type="button" className="nav-item" aria-current={current?.kind === 'preview' ? 'page' : undefined}
+                  onClick={() => { setPreviewRun((n) => n + 1); setCurrent({ kind: 'preview' }); }}>Vorschau (neues Fenster)</button>
+              </li>
+              <li>
                 <button type="button" className="nav-item" aria-current={current?.kind === 'export' ? 'page' : undefined}
                   onClick={() => setCurrent({ kind: 'export' })}>Exportieren</button>
               </li>
@@ -198,6 +204,10 @@ export default function SiteEditor({ site, client, onBack }) {
               wc.setRemovedFiles((files) => [...new Set([...files, ...res.removedFiles])]);
             }}
             onChange={(rows) => setData((d) => ({ ...d, [item.id]: rows }))} />
+        )}
+        {current?.kind === 'preview' && (
+          <PreviewPanel key={previewRun} site={site} client={client}
+            getWork={() => ({ ...wc.peek(), newImages: latest.current.newImages, headSha: base.headSha, dirty: latest.current.dirty })} />
         )}
         {current?.kind === 'export' && <ExportPanel site={site} client={client} dirty={unsaved} />}
         {current?.kind === 'history' && <HistoryPanel site={site} client={client} />}

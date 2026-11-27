@@ -6,6 +6,7 @@ import SiteEditor from './screens/SiteEditor.jsx';
 import AppBar from './screens/AppBar.jsx';
 import { loadSite } from './content/site.js';
 import { parseSiteHash } from './content/siteHash.js';
+import { clearPreviewCache } from './preview/cache.js';
 import { loadToken, saveToken, clearToken } from './auth/token.js';
 
 // phase: 'checking' | 'retry' | 'login' | 'sites'
@@ -79,6 +80,7 @@ export default function App() {
 
   function handleLogout() {
     clearToken();
+    clearPreviewCache(); // Vorschau-Inhalte nicht auf dem Geraet zuruecklassen
     requestSeq.current++;
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
     setView({ status: 'list' });

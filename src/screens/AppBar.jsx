@@ -9,7 +9,7 @@ export default function AppBar({ user, siteName, onLogout }) {
         {siteName && <span className="app-site">{siteName}</span>}
       </div>
       <div className="app-bar-user">
-        <a className="app-help" href="./anleitung.html" target="_blank" rel="noopener">Anleitung (neues Fenster)</a>
+        <a className="app-help" href="./anleitung.html" target="_blank" rel="noopener noreferrer">Anleitung (neues Fenster)</a>
         <span className="app-user">Angemeldet als {user.name || user.login}</span>
         <button type="button" onClick={onLogout}>Abmelden</button>
       </div>

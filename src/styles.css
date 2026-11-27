@@ -459,6 +459,8 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
   position: sticky;
   bottom: 0;
   z-index: 4;
+  max-height: 40vh;
+  overflow: auto;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

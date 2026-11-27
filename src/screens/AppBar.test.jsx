@@ -40,6 +40,6 @@ describe('AppBar', () => {
     expect(link.textContent).toBe('Anleitung (neues Fenster)');
     expect(link.getAttribute('href')).toBe('./anleitung.html');
     expect(link.getAttribute('target')).toBe('_blank');
-    expect(link.getAttribute('rel')).toContain('noopener');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
   });
 });

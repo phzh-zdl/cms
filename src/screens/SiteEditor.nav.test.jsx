@@ -45,7 +45,7 @@ describe('SiteEditor Navigation', () => {
     expect(groups(c)).toEqual([
       { heading: 'Inhalte', buttons: ['Fachbereiche'] },
       { heading: 'Textseiten', buttons: ['Impressum'] },
-      { heading: 'Veröffentlichen', buttons: ['Exportieren', 'Verlauf'] },
+      { heading: 'Veröffentlichen', buttons: ['Vorschau (neues Fenster)', 'Exportieren', 'Verlauf'] },
     ]);
   });
 
@@ -65,5 +65,12 @@ describe('SiteEditor Navigation', () => {
     const c = await render(makeSite([]));
     const main = c.querySelector('.editor-main');
     expect(main.lastElementChild.classList.contains('save-bar')).toBe(true);
+  });
+
+  it('Vorschau-Knopf ohne Service Worker: Meldung statt Fehler', async () => {
+    const c = await render(makeSite([]));
+    const btn = [...c.querySelectorAll('nav button')].find((b) => b.textContent === 'Vorschau (neues Fenster)');
+    await act(async () => btn.click());
+    expect(c.querySelector('[role="alert"]').textContent).toContain('Die Vorschau ist in diesem Browser nicht verfügbar.');
   });
 });
