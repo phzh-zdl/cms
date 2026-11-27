@@ -1,0 +1,106 @@
+
+/* ───── Hausschriften ───── */
+@font-face {
+  font-family: 'MarkWeb';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('./assets/fonts/MarkWeb.woff') format('woff');
+}
+@font-face {
+  font-family: 'MarkWeb';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url('./assets/fonts/MarkWeb-Book.woff') format('woff');
+}
+@font-face {
+  font-family: 'MarkWeb';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('./assets/fonts/MarkWeb-Bold.woff') format('woff');
+}
+@font-face {
+  font-family: 'MarkWeb';
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  src: url('./assets/fonts/MarkWeb-Heavy.woff') format('woff');
+}
+@font-face {
+  font-family: 'MarkWeb';
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  src: url('./assets/fonts/MarkWeb-Italic.woff') format('woff');
+}
+
+/* ───── Tokens ───── */
+:root {
+  --bg:          #fbfbfc;   /* kühles Off-White, bewusst nicht Creme */
+  --surface:     #ffffff;
+  --surface-2:   #f3f4f7;
+  --ink:         #1b1b1f;
+  --ink-2:       #4a4d55;   /* 8.2:1 auf --bg */
+  --ink-3:       #6a6d75;   /* 5.0:1 — kleinste Grösse für echten Text */
+  --ink-4:       #8a8d95;   /* nur Dekoration, nie tragender Text */
+  --line:        #bebca6;   /* warmes Sandgrau — Vorgabe PHZH */
+  --line-soft:   #dddcd1;   /* dieselbe Farbe, 50 % Richtung Grund aufgehellt */
+  --line-ui:     #8f8d76;   /* Sandton dunkler: Rahmen von Bedienelementen, >= 3:1 (WCAG 1.4.11) */
+
+  /* PHZH-Magenta. --accent trägt Text (6.3:1), --accent-bright nur Flächen
+     und grosse UI-Elemente (Weiss darauf = 4.6:1). */
+  --accent:        #b2156d;
+  --accent-bright: #de1a88;
+  --accent-wash:   #fdeef6;
+
+  --band:        #16181d;   /* Footer-Band */
+  --band-ink:    #b8bcc6;
+  --band-accent: #ff6bb5;
+
+  --ok:          #1f6b3a;
+  --warn:        #8a4a12;
+  --danger:      #a32c22;
+  --danger-bg:   #fdeeec;
+
+  --radius:      10px;      /* abgerundete Karten — Workshop */
+  --radius-sm:   6px;
+  --radius-pill: 999px;
+
+  --stripe:      6px;       /* Farbstrich, dicker als vorher — Workshop */
+
+  /* Überschriften wie auf phzh.ch: MarkWeb in Gewicht 800, keine eigene
+     Display-Familie. Nine Elms bleibt bewusst draussen — das ist die
+     Schrift der Untermarke „Akzente", nicht die für normale Titel. */
+  --f-sans:    'MarkWeb', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --f-display: 'MarkWeb', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  --shadow-sm: 0 1px 2px rgba(22, 24, 29, 0.05);
+  --shadow-md: 0 4px 16px -6px rgba(22, 24, 29, 0.16);
+  --shadow-lg: 0 18px 40px -20px rgba(22, 24, 29, 0.30);
+}
+
+/* ───── Basis ───── */
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-sans);
+  font-weight: 500;
+  line-height: 1.5;
+}
+h1 { font-family: var(--f-display); font-weight: 800; margin: 0 0 1rem; }
+
+.login { max-width: 28rem; margin: 4rem auto; padding: 0 16px; }
+.login label { display: block; margin-bottom: 0.25rem; color: var(--ink-2); }
+.login input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  border: 1px solid var(--line-ui);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.login input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
