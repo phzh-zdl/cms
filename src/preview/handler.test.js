@@ -20,7 +20,7 @@ describe('SW-Handler', () => {
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=utf-8');
     expect(res.headers.get('Cache-Control')).toBe('no-store');
     const csp = res.headers.get('Content-Security-Policy');
-    expect(csp).toBe("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'none'");
+    expect(csp).toBe("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'");
     expect(csp).not.toContain('github');
   });
 
@@ -38,11 +38,17 @@ describe('SW-Handler', () => {
     expect(res.headers.get('Content-Security-Policy')).toContain("connect-src 'self';");
   });
 
-  it('ausserhalb des Scopes oder keine Lese-Anfrage: nicht behandelt', async () => {
+  it('Schreib-Anfrage im Scope: 405 mit CSP, nicht ans Netz', async () => {
+    const res = await h.respond(new Request(`${SCOPE}r/a`, { method: 'POST', body: 'x' }), SCOPE, fakeCache({}));
+    expect(res.status).toBe(405);
+    expect(res.headers.get('Content-Security-Policy')).toContain("frame-src 'none'");
+    expect(res.headers.get('Cache-Control')).toBe('no-store');
+  });
+
+  it('ausserhalb des Scopes: nicht behandelt', async () => {
     const cache = fakeCache({});
     expect(await h.respond(new Request('https://x.github.io/cms/index.html'), SCOPE, cache)).toBeNull();
     expect(await h.respond(new Request('https://x.github.io/cms/vorschau-x/a'), SCOPE, cache)).toBeNull();
-    expect(await h.respond(new Request(`${SCOPE}r/a`, { method: 'POST', body: 'x' }), SCOPE, cache)).toBeNull();
     expect(h.inScope(`${SCOPE}r/a`, SCOPE)).toBe(true);
     expect(h.inScope('https://x.github.io/cms/a', SCOPE)).toBe(false);
   });

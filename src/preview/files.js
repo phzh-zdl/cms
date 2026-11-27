@@ -1,5 +1,5 @@
 // Vorschau: die fertige Seite (Huelle) + der aktuelle Arbeitsstand des Editors als Dateiliste.
-import { shellHead, shellEntries, loadBlobs } from '../export/shell.js';
+import { shellHead, shellEntries, loadBlobs, treeOf } from '../export/shell.js';
 import { serializeJson } from '../save/serialize.js';
 import { contentPath } from '../content/site.js';
 
@@ -30,68 +30,49 @@ export function insertBanner(html, text) {
 const shellCache = new Map();
 export const clearShellCache = () => shellCache.clear();
 
-async function loadShell(client, repo, config, onProgress, extra) {
-  const head = await shellHead(client, repo, config);
-  const key = `${repo}@${head}`;
-  if (shellCache.has(key)) return { files: shellCache.get(key), cached: true };
-  const entries = await shellEntries(client, repo, head);
-  const bytes = await loadBlobs(client, repo, entries, { onProgress, total: entries.length + extra.length });
-  shellCache.set(key, bytes);
-  return { files: bytes, cached: false, loaded: entries.length };
-}
-
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-// Bilder, die der Arbeitsstand nutzt: Pfad im Repo -> Dateiname im Inhalt.
-function usedImages(config, data) {
-  const used = [];
-  for (const c of config.collections) {
-    for (const f of c.fields.filter((x) => x.type === 'image')) {
-      for (const row of data[c.id] ?? []) {
-        if (row[f.name]) used.push(contentPath(config, `${f.dir}/${row[f.name]}`));
-      }
-    }
-  }
-  return used;
-}
-
-// work = { data, pages, newImages: [{ path, bytes }], headSha (Stand, auf dem die Bilder liegen), dirty }
+// work = { data, pages, newImages: [{ path, bytes }], removedFiles: [Repo-Pfade], dirty }
+// Basis = ALLE Dateien unter contentRoot im aktuellen main (wie der Export); darueber der Arbeitsstand:
+// konfigurierte Dateien (gleiche Serialisierung wie beim Speichern), neue Bilder, entfernte Dateien fallen weg.
 // -> Map<Pfad, { bytes, type }>; Pfade wie im fertigen Paket (content/... statt contentRoot/...).
 export async function buildPreviewFiles(client, repo, config, work, { onProgress } = {}) {
   const prefix = `${config.contentRoot.replace(/\/+$/, '')}/`;
   const rel = (repoPath) => `content/${repoPath.slice(prefix.length)}`;
 
-  // Inhalte: dieselbe Serialisierung wie beim Speichern, aber vollstaendig.
-  const texts = [];
+  // Inhalte des Arbeitsstands.
+  const texts = new Map();
   for (const c of config.collections) {
-    if (work.data[c.id] !== undefined) texts.push([contentPath(config, c.file), serializeJson(work.data[c.id])]);
+    if (work.data[c.id] !== undefined) texts.set(contentPath(config, c.file), serializeJson(work.data[c.id]));
   }
   for (const p of config.pages) {
-    if (work.pages?.[p.id] !== undefined) texts.push([contentPath(config, p.file), serializeJson(work.pages[p.id])]);
+    if (work.pages?.[p.id] !== undefined) texts.set(contentPath(config, p.file), serializeJson(work.pages[p.id]));
   }
-
-  // Bilder: neue aus dem Arbeitsstand, gespeicherte aus dem Stand `headSha`.
   const fresh = new Map((work.newImages ?? []).map((i) => [i.path, i.bytes]));
-  const imagePaths = [...new Set(usedImages(config, work.data))];
-  const saved = imagePaths.filter((p) => !fresh.has(p));
-  let savedEntries = [];
-  if (saved.length > 0) {
-    const { treeSha } = await client.getCommit(repo, work.headSha);
-    const tree = await client.getTree(repo, treeSha, true);
-    const shaOf = new Map(tree.filter((e) => e.type === 'blob').map((e) => [e.path, e.sha]));
-    savedEntries = saved.filter((p) => shaOf.has(p)).map((p) => ({ path: p, sha: shaOf.get(p) }));
-  }
+  const removed = new Set(work.removedFiles ?? []);
 
-  const shell = await loadShell(client, repo, config, onProgress, savedEntries);
-  const total = (shell.cached ? 0 : shell.loaded) + savedEntries.length;
-  const savedBytes = await loadBlobs(client, repo, savedEntries, {
-    onProgress, total, done: shell.cached ? 0 : shell.loaded,
-  });
+  // Basis aus dem aktuellen main; was der Arbeitsstand ersetzt oder entfernt, wird nicht geladen.
+  const head = await shellHead(client, repo, config);
+  const mainTree = await treeOf(client, repo, 'main');
+  const baseEntries = mainTree
+    .filter((e) => e.type === 'blob' && e.path.startsWith(prefix)
+      && !texts.has(e.path) && !fresh.has(e.path) && !removed.has(e.path))
+    .map((e) => ({ path: e.path, sha: e.sha }));
+
+  const key = `${repo}@${head}`;
+  const cachedShell = shellCache.get(key);
+  const shellList = cachedShell ? null : await shellEntries(client, repo, head);
+  const total = (shellList?.length ?? 0) + baseEntries.length;
+  let done = 0;
+  const count = (p) => { onProgress?.({ done: p.done + done, total }); };
+  const shell = cachedShell ?? await loadBlobs(client, repo, shellList, { onProgress: count, total });
+  if (!cachedShell) { shellCache.set(key, shell); done = shellList.length; }
+  const base = await loadBlobs(client, repo, baseEntries, { onProgress: (p) => onProgress?.({ done: p.done, total }), total, done });
 
   const banner = work.dirty ? BANNER_DIRTY : BANNER_SAVED;
   const out = new Map();
-  for (const [path, bytes] of Object.entries(shell.files)) {
+  for (const [path, bytes] of Object.entries(shell)) {
     const type = contentType(path);
     out.set(path, {
       bytes: type.startsWith('text/html') ? encoder.encode(insertBanner(decoder.decode(bytes), banner)) : bytes,
@@ -99,10 +80,8 @@ export async function buildPreviewFiles(client, repo, config, work, { onProgress
     });
   }
   const put = (repoPath, bytes) => out.set(rel(repoPath), { bytes, type: contentType(rel(repoPath)) });
+  for (const [path, bytes] of Object.entries(base)) put(path, bytes);
   for (const [path, text] of texts) put(path, encoder.encode(text));
-  for (const path of imagePaths) {
-    const bytes = fresh.get(path) ?? savedBytes[path];
-    if (bytes) put(path, bytes);
-  }
+  for (const [path, bytes] of fresh) if (!removed.has(path)) put(path, bytes);
   return out;
 }

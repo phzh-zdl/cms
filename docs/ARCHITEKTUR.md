@@ -129,16 +129,24 @@ auch ungespeichert**. Kein Server, nichts wird veröffentlicht.
    hier nicht: es bezieht sich auf den Scope der Seite, nicht auf `./vorschau/`.
 2. `buildPreviewFiles` (`src/preview/files.js`) stellt die Dateien zusammen: Hülle des Zweigs
    `export.shell` (gemeinsamer Code mit dem Export in `src/export/shell.js`, 6er-Pool, im
-   Speicher pro Build-Stand zwischengespeichert), Inhalte aus dem Arbeitsstand mit `serializeJson`
-   (dieselbe Funktion wie beim Speichern), Bilder: gespeicherte aus dem Stand `base.headSha`
-   (nur die genutzten), neu hochgeladene direkt aus `newImages`. In jede HTML-Datei kommt ein
-   Hinweisband.
+   Speicher pro Build-Stand zwischengespeichert). Als Basis dienen **alle Dateien unter `contentRoot/`
+   im aktuellen `main`** (wie beim Export, also auch nicht konfigurierte Dateien und nicht
+   referenzierte Bilder; das deckt auch den Entwurf mit abweichendem `headSha` ab). Darüber liegt der
+   Arbeitsstand: konfigurierte Sammlungen und Textseiten mit `serializeJson` (dieselbe Funktion wie
+   beim Speichern), neu hochgeladene Bilder aus `newImages`; in `removedFiles` Genanntes fällt weg.
+   In jede HTML-Datei kommt ein Hinweisband.
 3. `fillPreviewCache` (`src/preview/cache.js`) leert den Cache `zdl-vorschau` und legt die Dateien
    unter `<Basis>/vorschau/<repo-name>/<Pfad>` ab. Das Fenster öffnet `…/index.html`.
 4. Der Service Worker (Logik in `public/vorschau/handler.js`, Tests in `src/preview/`) liefert nur aus
    dem Cache (sonst 404 „Diese Datei ist in der Vorschau nicht enthalten.") und setzt auf jede
-   Antwort eine CSP ohne `api.github.com` sowie `Cache-Control: no-store`.
-5. Beim Abmelden löscht `App.jsx` den Cache (`clearPreviewCache`).
+   Antwort eine CSP ohne `api.github.com` (mit `frame-src 'none'; child-src 'none'; worker-src 'none'`) sowie
+   `Cache-Control: no-store`; Schreib-Anfragen im Scope beantwortet er mit 405.
+5. Beim Abmelden löscht `App.jsx` den Cache (`clearPreviewCache`, wird abgewartet). Eine Laufnummer in
+   `src/preview/cache.js` sorgt dafür, dass nur der neueste Lauf den Cache beschreibt: ein veralteter
+   Lauf oder ein Lauf, der beim Abmelden noch unterwegs ist, legt nichts mehr ab. Während ein Lauf
+   arbeitet, ist der Knopf „Vorschau" gesperrt (`aria-disabled`).
+6. `src/boot.js`: das CMS startet nicht, wenn es in einem fremden Rahmen (iframe) läuft
+   („Das ZDL CMS kann nicht eingebettet werden.").
 
 ## 4. Sicherheitsrelevante Bausteine
 

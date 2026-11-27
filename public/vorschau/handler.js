@@ -3,7 +3,7 @@
 (function (root) {
   // Kein api.github.com: Code in der Vorschau kann keinen Zugangsschluessel an GitHub schicken.
   var CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; " +
-    "font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'none'";
+    "font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'";
   var NOT_FOUND = 'Diese Datei ist in der Vorschau nicht enthalten.';
 
   function inScope(url, scope) {
@@ -17,10 +17,12 @@
     return new Response(body, { status: status, headers: headers });
   }
 
-  // null = nicht zustaendig (ausserhalb des Scopes oder keine Lese-Anfrage), sonst eine Response.
+  // null = nicht zustaendig (ausserhalb des Scopes); im Scope nur Lesen, sonst 405, sonst eine Response.
   async function respond(request, scope, cache) {
-    if (request.method !== 'GET' && request.method !== 'HEAD') return null;
     if (!inScope(request.url, scope)) return null;
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return withHeaders('Diese Anfrage ist in der Vorschau nicht möglich.', 405, { 'Content-Type': 'text/plain; charset=utf-8', Allow: 'GET, HEAD' });
+    }
     var u = new URL(request.url);
     var key = u.origin + u.pathname;
     if (key.charAt(key.length - 1) === '/') key += 'index.html';

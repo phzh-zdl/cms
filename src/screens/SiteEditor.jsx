@@ -42,6 +42,7 @@ export default function SiteEditor({ site, client, onBack }) {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState(null);
   const [blockRequested, setBlockRequested] = useState(false);
+  const [previewBusy, setPreviewBusy] = useState(false);
   const [previewRun, setPreviewRun] = useState(0); // jeder Klick auf "Vorschau" startet eine neue Vorbereitung
   // Neuester Arbeitsstand und ob der Editor noch offen ist - fuer das Ende eines Speichervorgangs.
   const latest = useRef();
@@ -177,7 +178,11 @@ export default function SiteEditor({ site, client, onBack }) {
             <ul aria-labelledby="nav-veroeffentlichen">
               <li>
                 <button type="button" className="nav-item" aria-current={current?.kind === 'preview' ? 'page' : undefined}
-                  onClick={() => { setPreviewRun((n) => n + 1); setCurrent({ kind: 'preview' }); }}>Vorschau (neues Fenster)</button>
+                  aria-disabled={previewBusy ? 'true' : undefined}
+                  onClick={() => {
+                    if (previewBusy) { setCurrent({ kind: 'preview' }); return; } // laeuft schon: nur zeigen
+                    setPreviewRun((n) => n + 1); setCurrent({ kind: 'preview' });
+                  }}>{previewBusy ? 'Vorschau wird vorbereitet …' : 'Vorschau (neues Fenster)'}</button>
               </li>
               <li>
                 <button type="button" className="nav-item" aria-current={current?.kind === 'export' ? 'page' : undefined}
@@ -206,8 +211,8 @@ export default function SiteEditor({ site, client, onBack }) {
             onChange={(rows) => setData((d) => ({ ...d, [item.id]: rows }))} />
         )}
         {current?.kind === 'preview' && (
-          <PreviewPanel key={previewRun} site={site} client={client}
-            getWork={() => ({ ...wc.peek(), newImages: latest.current.newImages, headSha: base.headSha, dirty: latest.current.dirty })} />
+          <PreviewPanel key={previewRun} site={site} client={client} onBusyChange={setPreviewBusy}
+            getWork={() => ({ ...wc.peek(), newImages: latest.current.newImages, removedFiles: latest.current.removedFiles, dirty: latest.current.dirty })} />
         )}
         {current?.kind === 'export' && <ExportPanel site={site} client={client} dirty={unsaved} />}
         {current?.kind === 'history' && <HistoryPanel site={site} client={client} />}

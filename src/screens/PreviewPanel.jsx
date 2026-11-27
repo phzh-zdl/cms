@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { buildPreviewFiles } from '../preview/files.js';
-import { fillPreviewCache } from '../preview/cache.js';
+import { fillPreviewCache, beginPreviewRun } from '../preview/cache.js';
 
 export const MSG_UNAVAILABLE = 'Die Vorschau ist in diesem Browser nicht verfügbar. Bitte exportieren und das ZIP ansehen.';
 
@@ -19,13 +19,15 @@ function whenActive(registration) {
 
 // Baut die Vorschau (inkl. ungespeicherter Aenderungen) beim Oeffnen und auf Knopfdruck neu.
 // getWork() liefert den neuesten Arbeitsstand: { data, pages, newImages, headSha, dirty }.
-export default function PreviewPanel({ site, client, getWork }) {
+export default function PreviewPanel({ site, client, getWork, onBusyChange }) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(null);
   const [url, setUrl] = useState(null);
   const [error, setError] = useState(null);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  useEffect(() => { onBusyChange?.(busy); }, [busy]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => onBusyChange?.(false), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function run() {
     setError(null); setUrl(null); setProgress(null);
@@ -34,14 +36,15 @@ export default function PreviewPanel({ site, client, getWork }) {
       return;
     }
     setBusy(true);
+    const gen = beginPreviewRun(); // nur der neueste Lauf darf den Cache beschreiben
     try {
       const registration = await navigator.serviceWorker.register('./vorschau/sw.js', { scope: './vorschau/' });
       await whenActive(registration);
       const files = await buildPreviewFiles(client, site.repo, site.config, getWork(), {
         onProgress: (p) => { if (alive.current) setProgress(p); },
       });
-      const target = await fillPreviewCache(files, site.repo.split('/').pop());
-      if (!alive.current) return;
+      const target = await fillPreviewCache(files, site.repo.split('/').pop(), { gen });
+      if (!alive.current || target === null) return; // abgemeldet oder von neuerem Lauf abgeloest
       setUrl(target);
       // Mit noopener liefert open() immer null; der Link unten bleibt deshalb immer sichtbar.
       window.open(target, '_blank', 'noopener');

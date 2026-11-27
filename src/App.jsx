@@ -78,9 +78,9 @@ export default function App() {
     setView({ status: 'list' });
   }
 
-  function handleLogout() {
+  async function handleLogout() {
     clearToken();
-    clearPreviewCache(); // Vorschau-Inhalte nicht auf dem Geraet zuruecklassen
+    await clearPreviewCache(); // Vorschau-Inhalte nicht auf dem Geraet zuruecklassen; ueberholt laufende Laeufe
     requestSeq.current++;
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
     setView({ status: 'list' });

@@ -10,9 +10,11 @@ vi.mock('../preview/files.js', () => ({
 }));
 vi.mock('../preview/cache.js', () => ({
   fillPreviewCache: vi.fn(async () => 'https://h/cms/vorschau/r/index.html'),
+  beginPreviewRun: vi.fn(() => 1),
 }));
 import PreviewPanel from './PreviewPanel.jsx';
 import { buildPreviewFiles } from '../preview/files.js';
+import { fillPreviewCache } from '../preview/cache.js';
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 let container, root;
@@ -73,5 +75,28 @@ describe('PreviewPanel', () => {
     await render(<PreviewPanel site={site} client={{}} getWork={getWork} />);
     expect(container.querySelector('[aria-live="polite"]').textContent).toBe('Vorschau wird vorbereitet … 12 von 40');
     await act(async () => release());
+  });
+
+  it('ueberholter Lauf (fill liefert null): kein Oeffnen, kein Link', async () => {
+    vi.stubGlobal('navigator', { serviceWorker: fakeSw() });
+    vi.stubGlobal('caches', {});
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    fillPreviewCache.mockResolvedValueOnce(null);
+    await render(<PreviewPanel site={site} client={{}} getWork={getWork} />);
+    expect(open).not.toHaveBeenCalled();
+    expect(container.querySelector('a')).toBeNull();
+  });
+
+  it('meldet Beschaeftigt an den Aufrufer', async () => {
+    let release;
+    buildPreviewFiles.mockImplementationOnce(() => new Promise((res) => { release = () => res(new Map()); }));
+    vi.stubGlobal('navigator', { serviceWorker: fakeSw() });
+    vi.stubGlobal('caches', {});
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    const calls = [];
+    await render(<PreviewPanel site={site} client={{}} getWork={getWork} onBusyChange={(b) => calls.push(b)} />);
+    expect(calls.at(-1)).toBe(true);
+    await act(async () => release());
+    expect(calls.at(-1)).toBe(false);
   });
 });

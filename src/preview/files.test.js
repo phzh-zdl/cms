@@ -14,7 +14,7 @@ const config = {
 };
 
 function makeClient({ shell = true, buildSha = 'cBuild' } = {}) {
-  const blobs = { s_index: '<html><body class="x"><p>Hi</p></body></html>', s_js: 'JS', s_old: 'OLD', m_img: 'SAVED-IMG', m_unused: 'UNUSED' };
+  const blobs = { s_index: '<html><body class="x"><p>Hi</p></body></html>', s_js: 'JS', s_old: 'OLD', m_img: 'SAVED-IMG', m_unused: 'UNUSED', m_extra: '{"x":1}', m_res: 'MAIN-RES', m_src: 'SRC' };
   const trees = {
     tBuild: [
       { path: 'index.html', type: 'blob', sha: 's_index' },
@@ -25,6 +25,9 @@ function makeClient({ shell = true, buildSha = 'cBuild' } = {}) {
     tMain: [
       { path: 'public/content/images/a.webp', type: 'blob', sha: 'm_img' },
       { path: 'public/content/images/unused.webp', type: 'blob', sha: 'm_unused' },
+      { path: 'public/content/extra.json', type: 'blob', sha: 'm_extra' },
+      { path: 'public/content/resources.json', type: 'blob', sha: 'm_res' },
+      { path: 'src/app.js', type: 'blob', sha: 'm_src' },
     ],
   };
   const c = { getBlobs: [], getTrees: [], maxActive: 0 };
@@ -59,7 +62,8 @@ describe('buildPreviewFiles', () => {
   it('Huelle ohne content/, Inhalte aus dem ungespeicherten Arbeitsstand', async () => {
     const files = await buildPreviewFiles(makeClient(), 'o/r', config, work());
     expect([...files.keys()].sort()).toEqual([
-      'assets/x.js', 'content/images/a.webp', 'content/pages/impressum.json', 'content/resources.json', 'index.html',
+      'assets/x.js', 'content/extra.json', 'content/images/a.webp', 'content/images/unused.webp',
+      'content/pages/impressum.json', 'content/resources.json', 'index.html',
     ]);
     expect(dec(files.get('content/resources.json').bytes)).toContain('Neuer Titel');
     expect(dec(files.get('content/resources.json').bytes)).not.toContain('OLD');
@@ -67,12 +71,25 @@ describe('buildPreviewFiles', () => {
     expect(files.get('content/resources.json').type).toBe('application/json');
   });
 
-  it('gespeichertes Bild kommt aus main, nur wenn der Arbeitsstand es nutzt', async () => {
+  it('Basis wie Export: nicht konfigurierte Datei und unreferenziertes Bild aus main erscheinen', async () => {
+    const files = await buildPreviewFiles(makeClient(), 'o/r', config, work());
+    expect(dec(files.get('content/extra.json').bytes)).toBe('{"x":1}');
+    expect(dec(files.get('content/images/unused.webp').bytes)).toBe('UNUSED');
+    expect(files.has('src/app.js')).toBe(false);
+  });
+
+  it('Arbeitsstand gewinnt gegen main; entfernte Dateien fallen weg', async () => {
+    const client = makeClient();
+    const files = await buildPreviewFiles(client, 'o/r', config, work({ removedFiles: ['public/content/images/unused.webp'] }));
+    expect(dec(files.get('content/resources.json').bytes)).toContain('Neuer Titel');
+    expect(client.getBlobs).not.toContain('m_res');
+    expect(files.has('content/images/unused.webp')).toBe(false);
+  });
+
+  it('gespeichertes Bild kommt aus main', async () => {
     const client = makeClient();
     const files = await buildPreviewFiles(client, 'o/r', config, work());
     expect(dec(files.get('content/images/a.webp').bytes)).toBe('SAVED-IMG');
-    expect(files.has('content/images/unused.webp')).toBe(false);
-    expect(client.getBlobs).not.toContain('m_unused');
     expect(files.get('content/images/a.webp').type).toBe('image/webp');
   });
 
@@ -84,11 +101,11 @@ describe('buildPreviewFiles', () => {
       newImages: [{ path: 'public/content/images/new.webp', bytes }],
     }));
     expect(files.get('content/images/new.webp').bytes).toBe(bytes);
-    expect(files.has('content/images/a.webp')).toBe(false);
+    expect(files.has('content/images/a.webp')).toBe(true); // main-Bild bleibt, wenn nicht entfernt
   });
 
   it('geloeschter Eintrag fehlt samt Bild', async () => {
-    const files = await buildPreviewFiles(makeClient(), 'o/r', config, work({ data: { resources: [] } }));
+    const files = await buildPreviewFiles(makeClient(), 'o/r', config, work({ data: { resources: [] }, removedFiles: ['public/content/images/a.webp'] }));
     expect(dec(files.get('content/resources.json').bytes).trim()).toBe('[]');
     expect(files.has('content/images/a.webp')).toBe(false);
   });
