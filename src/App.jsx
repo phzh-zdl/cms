@@ -1,17 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Login from './screens/Login.jsx';
 import { createClient, AuthError } from './github/client.js';
 import SiteList from './screens/SiteList.jsx';
 import SiteEditor from './screens/SiteEditor.jsx';
 import { loadSite } from './content/site.js';
+import { parseSiteHash } from './content/siteHash.js';
 import { loadToken, saveToken, clearToken } from './auth/token.js';
 
 // phase: 'checking' | 'retry' | 'login' | 'sites'
 // In 'sites' steht die gewählte Seite im URL-Hash (#/<owner>/<repo>); view: { status: 'list' | 'loading' | 'error' | 'editor', ... }
-const repoFromHash = () => {
-  const m = window.location.hash.match(/^#\/([^/]+\/[^/]+)$/);
-  return m ? decodeURIComponent(m[1]) : null;
-};
+const repoFromHash = () => parseSiteHash(window.location.hash);
 
 export default function App() {
   const [stored] = useState(loadToken);
@@ -19,6 +17,7 @@ export default function App() {
   const [attempt, setAttempt] = useState(0);
   const [checkError, setCheckError] = useState(null);
   const [session, setSession] = useState(null); // { token, user, client }
+  const loadToken_ = useRef(0); // verwirft Ergebnisse veralteter Ladevorgaenge
   const [view, setView] = useState({ status: 'list' });
 
   useEffect(() => {
@@ -60,22 +59,26 @@ export default function App() {
   }
 
   async function openSite(repo, client = session.client) {
+    const token = ++loadToken_.current;
     window.location.hash = `#/${repo}`;
     setView({ status: 'loading', repo });
     try {
-      setView({ status: 'editor', site: await loadSite(client, repo) });
+      const site = await loadSite(client, repo);
+      if (token === loadToken_.current) setView({ status: 'editor', site });
     } catch (e) {
-      setView({ status: 'error', message: e?.message || 'Die Seite konnte nicht geladen werden.' });
+      if (token === loadToken_.current) setView({ status: 'error', message: e?.message || 'Die Seite konnte nicht geladen werden.' });
     }
   }
 
   function closeSite() {
+    loadToken_.current++;
     window.location.hash = '';
     setView({ status: 'list' });
   }
 
   function handleLogout() {
     clearToken();
+    loadToken_.current++;
     setView({ status: 'list' });
     setSession(null);
     setPhase('login');
