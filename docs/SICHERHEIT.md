@@ -1,9 +1,8 @@
 # Sicherheit und Datenschutz des ZDL CMS
 
-Dieses Dokument richtet sich an den Sicherheitsausschuss. Es beschreibt in einfacher Sprache,
+Dieses Dokument richtet sich an den Sicherheitsausschuss. Es beschreibt,
 wie das CMS (Werkzeug zum Bearbeiten von Webseiten-Inhalten) funktioniert, wer worauf
-zugreifen kann, wo was gespeichert wird und was bei Problemen geschieht. Unvermeidliche
-Fachbegriffe werden beim ersten Auftreten in einem Satz erklärt.
+zugreifen kann, wo was gespeichert wird und was bei Problemen geschieht.
 
 ## 1. Kurzfassung
 
