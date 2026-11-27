@@ -5,6 +5,7 @@ import { collectChanges } from './serialize.js';
 import { buildCommitMessage, summarizeChanges } from './commitMessage.js';
 import { saveChanges } from './saveChanges.js';
 import { mergeSite, applyChoices } from './merge.js';
+import { invalidParts } from './siteErrors.js';
 
 const BRANCH = 'main';
 const MAX_ATTEMPTS = 3;
@@ -70,7 +71,8 @@ export function useConflictSave(site, client, wc) {
   }
 
   // work = { data, pages, settings, newImages, removedFiles } (Stand beim Klick auf "Speichern").
-  // Liefert { status: 'saved', sha, baseSha, snapshot } | { status: 'cancelled' } | { status: 'busy' };
+  // Liefert { status: 'saved', sha, baseSha, snapshot } | { status: 'cancelled' } | { status: 'busy' }
+  // | { status: 'invalid' } (Ergebnis des Zusammenfuehrens hat Fehler, nichts geschrieben);
   // andere Fehler werden weitergegeben.
   async function save({ data, pages, settings = {}, newImages, removedFiles }) {
     let base = wc.base;
@@ -84,6 +86,9 @@ export function useConflictSave(site, client, wc) {
         if (!next) return { status: 'cancelled' };
         wc.rebase(next.base, mine, next.mine);
         ({ base, mine } = next);
+        // Zusammengefuehrtes Ergebnis wie vor dem Speichern pruefen; mit Fehlern nichts schreiben.
+        // (Noch verwendete Bilder loescht collectChanges ohnehin nicht, siehe stillRemoved.)
+        if (invalidParts(config, mine.data, mine.settings, base.data).length > 0) return { status: 'invalid' };
       }
       const changes = collectChanges({ config, original: base.original }, mine.data, mine.pages, newImages, removedFiles, mine.settings);
       const message = buildCommitMessage(

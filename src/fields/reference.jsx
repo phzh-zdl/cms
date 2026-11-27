@@ -1,11 +1,11 @@
 import FieldFrame, { aria } from './FieldFrame.jsx';
-import { isBlank, requiredCheck, targetHas } from './rules.js';
+import { MISSING_TARGET, isBlank, requiredCheck, targetHas } from './rules.js';
 import { referenceOptions } from './options.js';
 
 export function validate(value, field, ctx) {
   const r = requiredCheck(isBlank(value) ? null : value, field);
   if (r !== undefined) return r;
-  return targetHas(ctx, field.to, value) ? null : 'Unbekannter Eintrag.';
+  return targetHas(ctx, field.to, value) ? null : MISSING_TARGET;
 }
 
 export function Editor({ field, value, onChange, ctx, error }) {

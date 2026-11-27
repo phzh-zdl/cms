@@ -1,11 +1,11 @@
 import { ErrorLine, fieldId, errorId } from './FieldFrame.jsx';
-import { REQUIRED, targetHas } from './rules.js';
+import { MISSING_TARGET, REQUIRED, targetHas } from './rules.js';
 import { referenceOptions } from './options.js';
 
 export function validate(value, field, ctx) {
   const ids = Array.isArray(value) ? value : [];
   if (ids.length === 0) return field.required ? REQUIRED : null;
-  return ids.every((id) => targetHas(ctx, field.to, id)) ? null : 'Unbekannter Eintrag.';
+  return ids.every((id) => targetHas(ctx, field.to, id)) ? null : MISSING_TARGET;
 }
 
 export function Editor({ field, value, onChange, ctx, error }) {

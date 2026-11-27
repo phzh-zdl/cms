@@ -3,12 +3,12 @@ import { contentPath } from '../content/site.js';
 import CollectionView from '../editor/CollectionView.jsx';
 import SaveBar from '../editor/SaveBar.jsx';
 import { planDelete, applyDelete } from '../content/deleteRules.js';
-import { collectionErrors } from '../editor/entryState.js';
+import { invalidParts } from '../save/siteErrors.js';
 import ConflictDialog from '../editor/ConflictDialog.jsx';
 import PageEditor from '../editor/PageEditor.jsx';
 import SelectionView from '../editor/SelectionView.jsx';
 import SettingsForm from '../editor/SettingsForm.jsx';
-import { settingsErrors, standaloneSettings } from '../content/settingsValue.js';
+import { standaloneSettings } from '../content/settingsValue.js';
 import { AuthError, GitHubError } from '../github/client.js';
 import { useSiteWorkingCopy } from '../save/useSiteWorkingCopy.js';
 import { useDraftAutosave } from '../save/useDraftAutosave.js';
@@ -79,12 +79,7 @@ export default function SiteEditor({ site, client, onBack }) {
     return () => window.removeEventListener('beforeunload', warn);
   }, [unsaved]);
 
-  const invalidCollections = config.collections.filter((c) =>
-    Object.keys(collectionErrors(c, data[c.id] ?? [], { data, collections: config.collections, original: base.data })).length > 0);
-  // Einstellungen nur pruefen, wenn sie geschrieben werden (vorhanden oder geaendert), nicht die Standardwerte.
-  const invalidSettings = (config.settings ?? []).filter((st) =>
-    settings[st.name] !== undefined && Object.keys(settingsErrors(st, settings[st.name])).length > 0);
-  const invalid = [...invalidCollections, ...invalidSettings];
+  const invalid = invalidParts(config, data, settings, base.data);
   // Genannt wird der Navigationspunkt, unter dem sich der Fehler beheben laesst (bei Einstellungen ggf. die Ansicht).
   const fixLabel = (x) => (config.settings ?? []).includes(x)
     ? ((config.views ?? []).find((v) => v.settings === x.name)?.label ?? x.label)
@@ -107,6 +102,12 @@ export default function SiteEditor({ site, client, onBack }) {
         setResult({ kind: 'error', text: errorText(e, drafted) });
         setSaving(false);
       }
+      return;
+    }
+    if (outcome.status === 'invalid') {
+      // Zusammengefuehrter Stand hat Fehler (z. B. Verweis auf inzwischen geloeschten Eintrag):
+      // nichts geschrieben, Stand bleibt im Editor, die Fehler sind markiert.
+      if (mounted.current) { setBlockRequested(true); setSaving(false); }
       return;
     }
     if (outcome.status !== 'saved') {

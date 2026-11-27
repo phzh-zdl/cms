@@ -77,6 +77,21 @@ describe('collectChanges', () => {
   });
 });
 
+describe('collectChanges: noch verwendete Bilder', () => {
+  const cfg = {
+    contentRoot: 'public/content',
+    collections: [{ id: 'resources', label: 'Ressourcen', file: 'resources.json',
+      fields: [{ name: 'title', type: 'text' }, { name: 'image', type: 'image', dir: 'images' }] }],
+    pages: [],
+  };
+  it('loescht keine Datei, die ein Eintrag noch verwendet (geteilter Dateiname)', () => {
+    const rows = [{ id: 'r2', title: 'B', image: 'same.webp' }];
+    const st = { config: cfg, original: { 'public/content/resources.json': serializeJson([{ id: 'r1', title: 'A', image: 'same.webp' }, ...rows]) } };
+    const out = collectChanges(st, { resources: rows }, {}, [], ['public/content/images/same.webp', 'public/content/images/weg.webp']);
+    expect(out.filter((c) => c.delete)).toEqual([{ path: 'public/content/images/weg.webp', delete: true }]);
+  });
+});
+
 describe('collectChanges: Einstellungen', () => {
   const cfg = { ...config, settings: [{ name: 'carousel', file: 'carousel.json', fields: [] }] };
   const st = { config: cfg, original: site.original };

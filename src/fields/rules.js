@@ -19,4 +19,6 @@ export function requiredCheck(value, field) {
   return undefined;
 }
 
+// Verweis auf einen Eintrag, den es (nicht mehr) gibt - z. B. inzwischen von jemand anderem geloescht.
+export const MISSING_TARGET = 'Der gewählte Eintrag existiert nicht mehr. Bitte neu wählen.';
 export const targetHas = (ctx, to, id) => (ctx.data?.[to] ?? []).some((r) => r.id === id);

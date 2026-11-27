@@ -1,6 +1,6 @@
 // Vorschau: die fertige Seite (Huelle) + der aktuelle Arbeitsstand des Editors als Dateiliste.
 import { shellHead, shellEntries, loadBlobs, treeOf } from '../export/shell.js';
-import { serializeJson } from '../save/serialize.js';
+import { serializeJson, stillRemoved } from '../save/serialize.js';
 import { contentPath } from '../content/site.js';
 
 export const BANNER_DIRTY = 'Vorschau – enthält ungespeicherte Änderungen. Nicht veröffentlicht.';
@@ -54,7 +54,7 @@ export async function buildPreviewFiles(client, repo, config, work, { onProgress
     if (work.settings?.[st.name] !== undefined) texts.set(contentPath(config, st.file), serializeJson(work.settings[st.name]));
   }
   const fresh = new Map((work.newImages ?? []).map((i) => [i.path, i.bytes]));
-  const removed = new Set(work.removedFiles ?? []);
+  const removed = new Set(stillRemoved(config, work.data, work.removedFiles ?? []));
 
   // Basis aus dem aktuellen main; was der Arbeitsstand ersetzt oder entfernt, wird nicht geladen.
   const head = await shellHead(client, repo, config);

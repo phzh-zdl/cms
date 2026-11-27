@@ -51,7 +51,7 @@ describe('Feld-Typen: validate', () => {
   });
   it('reference', () => {
     expect(v('reference', 'a', { to: 'cats' })).toBeNull();
-    expect(v('reference', 'zzz', { to: 'cats' })).toBe('Unbekannter Eintrag.');
+    expect(v('reference', 'zzz', { to: 'cats' })).toBe('Der gewählte Eintrag existiert nicht mehr. Bitte neu wählen.');
     expect(v('reference', null, { to: 'cats', required: true })).toBe('Pflichtfeld.');
     expect(v('reference', null, { to: 'cats' })).toBeNull();
   });
@@ -59,7 +59,7 @@ describe('Feld-Typen: validate', () => {
     const f = { to: 'cats', required: true };
     expect(v('reference-multi', [], f)).toBe('Pflichtfeld.');
     expect(v('reference-multi', ['a', 'b'], f)).toBeNull();
-    expect(v('reference-multi', ['a', 'q'], f)).toBe('Unbekannter Eintrag.');
+    expect(v('reference-multi', ['a', 'q'], f)).toBe('Der gewählte Eintrag existiert nicht mehr. Bitte neu wählen.');
     expect(v('reference-multi', [], { to: 'cats' })).toBeNull();
   });
   it('empty-Werte', () => {
