@@ -2,7 +2,8 @@
 # Simuliert die Spiegelung aus backup/.github/workflows/mirror.yml lokal gegen
 # Bare-Repos (file:// statt https://). Die clone-/push-Befehle haben dieselbe Form
 # wie im Workflow. Erwartung: Lauf 1 gelingt, Lauf 2 (nach umgeschriebener
-# Historie in der Quelle) wird abgelehnt. Exit 0 nur, wenn beides zutrifft.
+# Historie in der Quelle) wird mit non-fast-forward abgelehnt; danach wird die
+# Wiederherstellung aus backup/README.md geprüft. Exit 0 nur, wenn alles zutrifft.
 set -euo pipefail
 
 TMP="$(mktemp -d)"
@@ -40,9 +41,28 @@ cd "$TMP/work"
 git commit -q --amend -m "zwei (umgeschrieben)"
 git push -q --force origin main
 
-echo "== Lauf 2: nach Umschreiben (muss abgelehnt werden) =="
-if ( mirror ); then
-  echo "FEHLER: Lauf 2 wurde NICHT abgelehnt"; exit 1
+echo "== Lauf 2: nach Umschreiben (muss mit non-fast-forward abgelehnt werden) =="
+if OUT="$( ( mirror ) 2>&1 )"; then
+  echo "$OUT"; echo "FEHLER: Lauf 2 wurde NICHT abgelehnt"; exit 1
 fi
-echo "OK: Push wurde abgelehnt, Backup unverändert."
+echo "$OUT"
+if ! grep -q "non-fast-forward" <<<"$OUT"; then
+  echo "FEHLER: Lauf 2 ist aus anderem Grund fehlgeschlagen (kein non-fast-forward)"; exit 1
+fi
+echo "OK: Push wurde als non-fast-forward abgelehnt, Backup unverändert."
+
+echo "== Wiederherstellung (genau die Befehle aus backup/README.md, file:// statt https://) =="
+# Quelle zurücksetzen auf einen kaputten Zustand: neuer Commit auf main
+cd "$TMP/work"
+echo kaputt > a.txt; git commit -q -am kaputt
+git push -q --force origin main
+EXPECTED="$(git --git-dir="$TMP/backup.git" rev-parse refs/heads/${REPO}/main)"
+git clone -q "file://$TMP/backup.git" "$TMP/restore"
+cd "$TMP/restore"
+git push "file://$TMP/source.git" refs/remotes/origin/oer-dashboard/main:refs/heads/wiederherstellung
+RESTORED="$(git --git-dir="$TMP/source.git" rev-parse refs/heads/wiederherstellung)"
+if [ "$RESTORED" != "$EXPECTED" ]; then
+  echo "FEHLER: wiederhergestellter Commit $RESTORED != gesicherter Commit $EXPECTED"; exit 1
+fi
+echo "OK: wiederhergestellter Branch zeigt auf den gesicherten Commit ($RESTORED)."
 exit 0

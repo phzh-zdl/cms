@@ -3,6 +3,8 @@
 # in vite.config.js sorgen dafür, dass die Seite im Unterordner /cms/ läuft).
 # Ablauf: Tests und Build in einem Job ohne Schreibrechte, danach ein
 # separater Deploy-Job, der als einziger Pages-/OIDC-Rechte bekommt.
+# actions/configure-pages wird bewusst nicht benutzt: Es liest die Pages-Einstellungen
+# per API und bräuchte dafür Rechte im Build-Job; mit base './' ist es nicht nötig.
 name: pages
 
 on:
@@ -38,7 +40,6 @@ jobs:
         run: npm test
       - name: Production build
         run: npm run build
-      - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist

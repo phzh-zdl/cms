@@ -29,19 +29,31 @@ Die Sicherung bleibt dann unverändert auf dem letzten guten Stand.
    (Schritt-für-Schritt in `docs/ARCHITEKTUR.md` im CMS-Repo, Abschnitt "Deployment und Sicherung").
 4. Neue Inhalts-Repos in `mirror.yml` unter `matrix.repo` ergänzen und dem Token Zugriff geben.
 
+## Hinweis zu den gespiegelten Workflows
+
+Die Inhalts-Repos enthalten eigene Workflow-Dateien (`.github/workflows/*`), die hier
+mitgespiegelt werden. Sie laufen im Backup-Repo nicht: Ihre Trigger beziehen sich auf
+`main`, die gespiegelten Branches heissen aber `<repo>/main`. Nur `mirror.yml` auf dem
+echten `main` dieses Repos läuft.
+
 ## Wiederherstellen (Aufgabe für Admins)
 
-Beispiel: `oer-dashboard` ist kaputt, Stand von `oer-dashboard/main` zurückholen.
+Beispiel: `oer-dashboard` ist kaputt, der Stand von `oer-dashboard/main` soll zurück.
+Zuerst in einen **neuen Branch** wiederherstellen, nicht direkt auf `main`:
 
 ```bash
 git clone https://github.com/phzh-zdl/backup.git
 cd backup
-git push https://github.com/phzh-zdl/oer-dashboard.git oer-dashboard/main:refs/heads/main
+git push https://github.com/phzh-zdl/oer-dashboard.git refs/remotes/origin/oer-dashboard/main:refs/heads/wiederherstellung
 ```
 
-Der letzte Befehl schreibt den gesicherten Stand als `main` ins Inhalts-Repo. Ist
-`main` dort inzwischen weitergelaufen, wird der Push abgelehnt. Sicherer ist dann, den
-Stand zuerst auf einen neuen Branch zu pushen (`...:refs/heads/wiederherstellung`) und
-ihn per Pull Request zu prüfen. Ein Überschreiben von `main` (Force) ist eine bewusste
-Admin-Entscheidung und gehört nicht in den Normalbetrieb. Tags analog
-(`refs/tags/<repo>/<tag>:refs/tags/<tag>`).
+In einem frischen Clone liegen die gespiegelten Branches als
+`refs/remotes/origin/<repo>/<branch>`, deshalb der volle Ref-Name. Danach im Inhalts-Repo
+den Branch `wiederherstellung` prüfen und per Pull Request nach `main` bringen.
+
+Warum nicht direkt auf `main`: Ein Push auf `main` wird abgelehnt, sobald `main` weiter
+gelaufen ist, und ein Überschreiben (Force) würde die neueren Änderungen vernichten. Das
+ist eine bewusste Admin-Entscheidung und gehört nicht in den Normalbetrieb. Der Pull
+Request zeigt, was sich ändert, bevor etwas verloren geht.
+
+Tags: `refs/tags/<repo>/<tag>:refs/tags/<tag>`.
