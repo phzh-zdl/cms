@@ -1,6 +1,7 @@
 // Zuschneiden und als WebP kodieren (Breite max. 800 px, Format 5:3, Qualitaet 0.8).
 export const MAX_WIDTH = 800;
 export const QUALITY = 0.8;
+export const MSG_NO_WEBP = 'Dieser Browser kann keine WebP-Bilder erzeugen. Bitte einen aktuellen Browser verwenden (z.B. Chrome, Edge, Firefox oder Safari ab Version 16).';
 
 export function targetSize(cropWidth) {
   const width = Math.min(MAX_WIDTH, Math.round(cropWidth));
@@ -28,6 +29,11 @@ export function encodeCropped(image, area, { mode, background }) {
     ctx.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, width, height);
   }
   return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Das Bild konnte nicht umgewandelt werden.'))), 'image/webp', QUALITY);
+    canvas.toBlob((blob) => {
+      if (!blob) reject(new Error('Das Bild konnte nicht umgewandelt werden.'));
+      // Browser ohne WebP-Encoder liefern stillschweigend PNG.
+      else if (blob.type !== 'image/webp') reject(new Error(MSG_NO_WEBP));
+      else resolve(blob);
+    }, 'image/webp', QUALITY);
   });
 }

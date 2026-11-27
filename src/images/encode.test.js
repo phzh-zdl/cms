@@ -58,4 +58,11 @@ describe('encodeCropped', () => {
     await expect(encodeCropped(image, { x: 0, y: 0, width: 600, height: 360 }, { mode: 'crop', background: '#fff' }))
       .rejects.toThrow('Das Bild konnte nicht umgewandelt werden.');
   });
+
+  it('lehnt Nicht-WebP-Ausgabe (Browser ohne WebP-Encoder) ab', async () => {
+    const canvas = fakeCanvas();
+    canvas.toBlob = vi.fn((cb) => cb(new Blob(['x'], { type: 'image/png' })));
+    await expect(encodeCropped(image, { x: 0, y: 0, width: 600, height: 360 }, { mode: 'crop', background: '#fff' }))
+      .rejects.toThrow('Dieser Browser kann keine WebP-Bilder erzeugen. Bitte einen aktuellen Browser verwenden (z.B. Chrome, Edge, Firefox oder Safari ab Version 16).');
+  });
 });

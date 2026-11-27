@@ -47,8 +47,7 @@ export default function CropDialog({ src, background, onApply, onCancel }) {
     setError(null);
     try {
       const image = await loadImage(src);
-      const whole = { x: 0, y: 0, width: image.naturalWidth, height: image.naturalHeight };
-      const blob = await encodeCropped(image, area ?? whole, { mode, background });
+      const blob = await encodeCropped(image, area, { mode, background });
       onApply(new Uint8Array(await blob.arrayBuffer()));
     } catch (e) {
       setError(e.message);
@@ -96,7 +95,7 @@ export default function CropDialog({ src, background, onApply, onCancel }) {
         {error && <p role="alert">{error}</p>}
         <div className="dialog-actions">
           <button type="button" onClick={onCancel}>Abbrechen</button>
-          <button type="button" onClick={apply} disabled={busy}>Übernehmen</button>
+          <button type="button" onClick={apply} disabled={busy || (mode === 'crop' && !area)}>Übernehmen</button>
         </div>
       </div>
     </div>
