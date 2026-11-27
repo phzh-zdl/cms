@@ -12,23 +12,18 @@ import PageLinkForm from '../richtext/PageLinkForm.jsx';
 
 // Nur die Bausteine der Allowlist: p h2-h4 strong em ul ol li a table details br. Alles andere
 // (Bilder, Code, Zitate, Linie, Durchgestrichen, Unterstrichen) ist im Schema gar nicht vorhanden.
-function extensionsFor(toolbar) {
-  const full = toolbar === 'full';
-  const base = [
-    StarterKit.configure({
-      heading: { levels: full ? [2, 3, 4] : [2, 3] },
-      blockquote: false, codeBlock: false, code: false, horizontalRule: false,
-      strike: false, underline: false, link: false,
-    }),
-    Link.configure({ openOnClick: false, autolink: false, linkOnPaste: false, HTMLAttributes: { rel: null, target: null } }),
-  ];
-  if (!full) return base;
-  return [
-    ...base,
-    Table.configure({ resizable: false }), TableRow, TableHeader, TableCell,
-    Details.configure({ persist: false }), DetailsSummary, DetailsContent,
-  ];
-}
+// Tabellen, Abschnitte und H4 sind in jedem Editor im Schema, damit sie beim Bearbeiten nie still
+// verloren gehen; die Toolbar steuert nur, welche Knoepfe sichtbar sind.
+const EXTENSIONS = [
+  StarterKit.configure({
+    heading: { levels: [2, 3, 4] },
+    blockquote: false, codeBlock: false, code: false, horizontalRule: false,
+    strike: false, underline: false, link: false,
+  }),
+  Link.configure({ openOnClick: false, autolink: false, linkOnPaste: false, HTMLAttributes: { rel: null, target: null } }),
+  Table.configure({ resizable: false }), TableRow, TableHeader, TableCell,
+  Details.configure({ persist: false }), DetailsSummary, DetailsContent,
+];
 
 // Formatierter Text; gibt bei jeder Aenderung bereinigtes HTML aus.
 export default function RichTextField({ label, value, onChange, toolbar = 'basic', pageIds = [], error }) {
@@ -38,7 +33,7 @@ export default function RichTextField({ label, value, onChange, toolbar = 'basic
   onChangeRef.current = onChange;
 
   const editor = useEditor({
-    extensions: extensionsFor(toolbar),
+    extensions: EXTENSIONS,
     content: toEditorHtml(value),
     shouldRerenderOnTransaction: true,
     editorProps: {

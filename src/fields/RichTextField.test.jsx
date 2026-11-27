@@ -72,12 +72,12 @@ describe('RichTextField output', () => {
     expect(last).not.toMatch(/script|alert|<img/i);
   });
 
-  it('does not allow disabled node types (blockquote, code, h1, h4 in basic)', async () => {
+  it('does not allow disabled node types (blockquote, code, h1)', async () => {
     const onChange = vi.fn();
     const c = await render(<RichTextField label="Inhalt" value="" onChange={onChange} toolbar="basic" />);
-    await act(async () => editorEl(c).editor.commands.insertContent('<h1>A</h1><blockquote><p>B</p></blockquote><pre><code>C</code></pre><h4>D</h4>'));
+    await act(async () => editorEl(c).editor.commands.insertContent('<h1>A</h1><blockquote><p>B</p></blockquote><pre><code>C</code></pre>'));
     const last = onChange.mock.calls.at(-1)[0];
-    expect(last).not.toMatch(/<(h1|blockquote|pre|code|h4)/);
+    expect(last).not.toMatch(/<(h1|blockquote|pre|code)/);
   });
 
   it('round-trips details from stored html in the full toolbar', async () => {
@@ -138,5 +138,23 @@ describe('RichTextField link dialog', () => {
     });
     await click(text(c, 'Übernehmen'));
     expect(onChange.mock.calls.at(-1)[0]).toContain('href="impressum.html"');
+  });
+});
+
+describe('RichTextField keeps allowed structure in the basic toolbar', () => {
+  it('does not drop details, tables or h4 when the text is edited', async () => {
+    const onChange = vi.fn();
+    const html = '<p>Eins</p><h4>Vier</h4><details><summary>S</summary><p>D</p></details>'
+      + '<table><thead><tr><th>K</th></tr></thead><tbody><tr><td>W</td></tr></tbody></table>';
+    const c = await render(<RichTextField label="Inhalt" value={html} onChange={onChange} toolbar="basic" />);
+    await act(async () => editorEl(c).editor.commands.insertContentAt(1, 'X'));
+    const d = document.createElement('div');
+    d.innerHTML = onChange.mock.calls.at(-1)[0];
+    expect(d.querySelector('p').textContent).toBe('XEins');
+    expect(d.querySelector('h4').textContent).toBe('Vier');
+    expect(d.querySelector('details > summary').textContent).toBe('S');
+    expect(d.querySelector('details').textContent).toContain('D');
+    expect(d.querySelector('table th').textContent).toBe('K');
+    expect(d.querySelector('table td').textContent).toBe('W');
   });
 });
