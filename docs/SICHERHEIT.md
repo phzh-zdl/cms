@@ -67,6 +67,20 @@ GitHub weiter. GitHub entscheidet mit dem Schlüssel, ob sie erlaubt ist.
 **Voraussetzung (Einstellung durch den Owner der Organisation, siehe Abschnitt 9):** Zwei-Faktor-Pflicht
 für alle Mitglieder (zum Passwort kommt ein zweiter Nachweis, zum Beispiel ein Code aus einer App).
 
+**Neue Person aufnehmen (Owner der Organisation)** — Gegenstück zu Abschnitt 2 der Anleitung:
+
+1. Die Person schickt ihren GitHub-Benutzernamen.
+2. github.com/phzh-zdl → **People** → **Invite member** → Benutzernamen eingeben → Rolle **Member**
+   (nicht Owner) → Einladung senden. Die Einladung gilt 7 Tage.
+3. Unter **Teams** die Person ins Team der betreffenden Seite aufnehmen. Das Team hat nur
+   **Write** auf die Inhalts-Repos dieser Seite, auf keine weiteren Repos (siehe Abschnitt 9).
+4. Nach der Annahme erscheint „phzh-zdl" beim Erstellen des Zugangsschlüssels unter
+   „Resource owner". Verlangt die Organisation eine Freigabe neuer Schlüssel, den Schlüssel unter
+   **Settings** → **Personal access tokens** → **Pending requests** freigeben.
+
+**Person entfernen** (Austritt, Rollenwechsel): **People** → Person → **Remove from organization**.
+Damit funktionieren ihre Zugangsschlüssel für die Organisation sofort nicht mehr.
+
 ## 4. Was wird wo gespeichert
 
 | Was | Wo | Wie lange | Wer sieht es |
