@@ -109,6 +109,10 @@ export function createClient(token, fetchImpl = (...a) => fetch(...a)) {
       return (await json(`/repos/${repo}/git/ref/heads/${encodePath(branch)}`)).object.sha
     },
 
+    async getCommit(repo, sha) {
+      return { treeSha: (await json(`/repos/${repo}/git/commits/${sha}`)).tree.sha }
+    },
+
     async getTree(repo, sha, recursive = true) {
       const t = await json(`/repos/${repo}/git/trees/${sha}${recursive ? '?recursive=1' : ''}`)
       return t.tree.map(({ path, type, sha, mode }) => ({ path, type, sha, mode }))

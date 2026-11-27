@@ -167,4 +167,10 @@ describe('github client', () => {
     ])
     expect(f.calls[3].url).toBe('https://api.github.com/repos/o/r/commits?per_page=20&path=x%2Fy.md')
   })
+
+  it('getCommit liefert die Tree-Kennung des Commits', async () => {
+    const f = fake(res(200, { sha: 'c1', tree: { sha: 't1' } }))
+    expect(await createClient('t', f).getCommit('o/r', 'c1')).toEqual({ treeSha: 't1' })
+    expect(f.calls[0].url).toBe('https://api.github.com/repos/o/r/git/commits/c1')
+  })
 })

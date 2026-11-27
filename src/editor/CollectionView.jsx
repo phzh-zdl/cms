@@ -21,8 +21,10 @@ export default function CollectionView({ collection, data, original, collections
   const rows = data[collection.id] ?? [];
   const [query, setQuery] = useState('');
   // Offener Eintrag: Position in rows; isNew wird beim Oeffnen festgelegt,
-  // damit die Kennung nicht mitten im Tippen schreibgeschuetzt wird.
+  // damit die Kennung nicht mitten im Tippen schreibgeschuetzt wird. Aendert sich die
+  // Basis (nach dem Speichern), gilt wieder der Vergleich mit der neuen Basis.
   const [open, setOpen] = useState(null);
+  const openEntry = (index, isNew) => setOpen({ index, isNew, original });
 
   const errors = useMemo(
     () => collectionErrors(collection, rows, { data, collections, original }),
@@ -31,8 +33,9 @@ export default function CollectionView({ collection, data, original, collections
 
   if (open && rows[open.index]) {
     const entry = rows[open.index];
+    const isNew = open.original === original ? open.isNew : isNewEntry(collection, entry, original);
     return (
-      <EntryForm collection={collection} entry={entry} data={data} collections={collections} isNew={open.isNew}
+      <EntryForm collection={collection} entry={entry} data={data} collections={collections} isNew={isNew}
         onChange={(next) => onChange(rows.map((r, i) => (i === open.index ? next : r)))}
         onBack={() => setOpen(null)}
         planFor={planFor}
@@ -48,7 +51,7 @@ export default function CollectionView({ collection, data, original, collections
 
   const create = () => {
     onChange([...rows, newEntry(collection)]);
-    setOpen({ index: rows.length, isNew: true });
+    openEntry(rows.length, true);
   };
 
   return (
@@ -63,7 +66,7 @@ export default function CollectionView({ collection, data, original, collections
       <ul className="entry-list">
         {shown.map(({ row, index }) => (
           <li key={index}>
-            <button type="button" onClick={() => setOpen({ index, isNew: isNewEntry(collection, row, original) })}>
+            <button type="button" onClick={() => openEntry(index, isNewEntry(collection, row, original))}>
               <span className="entry-title">{titleOf(collection, row) || '(ohne Titel)'}</span>
               {errors[row[keyOf(collection)]] && <span className="entry-error">Fehler</span>}
             </button>

@@ -115,7 +115,7 @@ export default function App() {
             <button type="button" onClick={closeSite}>Zurück</button>
           </>
         )}
-        {view.status === 'editor' && <SiteEditor site={view.site} onBack={closeSite} />}
+        {view.status === 'editor' && <SiteEditor site={view.site} client={session.client} onBack={closeSite} />}
       </main>
     </>
   );

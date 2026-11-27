@@ -114,6 +114,10 @@ h1 { font-family: var(--f-display); font-weight: 800; margin: 0 0 1rem; }
 .editor-side nav button { display: block; width: 100%; text-align: left; }
 .editor-side nav button[aria-current="page"] { font-weight: 800; }
 .editor-side h2 { font-size: 1rem; margin: 1rem 0 0.25rem; }
+.save-bar { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; padding: 0.5rem 0; background: var(--bg); border-bottom: 1px solid var(--line, #ccc); }
+.save-bar > p, .save-bar > div { flex-basis: 100%; margin: 0; }
+.save-bar ul { margin: 0.25rem 0 0; }
+.draft-prompt { padding: 0 16px; }
 .site-name { font-weight: 800; }
 
 /* ───── Listen und Formulare ───── */
